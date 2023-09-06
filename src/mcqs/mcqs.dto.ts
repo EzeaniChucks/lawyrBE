@@ -1,9 +1,9 @@
-export class mcqCardDetailsDTO {
+export class mcqDetailsDTO {
   title: string;
   description: string;
 }
 
-export class cardIdDTO {
+export class mcqIdDTO {
   mcqId: string;
 }
 
@@ -27,6 +27,6 @@ export type MCQBodyDTO = {
   QAs: MCQuestionsDTO[];
 };
 export class mcqBodyANDDetails {
-  details: mcqCardDetailsDTO;
+  details: mcqDetailsDTO;
   mcqBody: MCQBodyDTO;
 }
