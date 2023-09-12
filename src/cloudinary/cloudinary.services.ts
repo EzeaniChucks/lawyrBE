@@ -33,4 +33,57 @@ export class CloudinaryService {
     );
     return result;
   }
+  async destroyMultipleVideos(videoPublicIds: string[]) {
+    const result = await v2.api.delete_resources(
+      videoPublicIds,
+      { resource_type: 'video' },
+      (err, result) => {
+        if (err) throw new NotFoundException(err);
+        if (result?.deleted) return result;
+        else return { msg: 'Could not delete videos' };
+      },
+    );
+    return result;
+  }
+  async uploadAudio(
+    file: any,
+  ): Promise<UploadApiResponse | UploadApiErrorResponse> {
+    const maxFileSize = 1024 * 1024 * 50;
+    return new Promise((resolve, reject) => {
+      const upload = v2.uploader.upload_stream(
+        { resource_type: 'video', max_bytes: maxFileSize },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        },
+      );
+      toStream(file.buffer).pipe(upload);
+    });
+  }
+  async urlAudio(audioPublicId: string, options: any) {
+    return v2.url(audioPublicId, options);
+  }
+  async destroyAudio(audioPublicId: string) {
+    const result = await v2.uploader.destroy(
+      audioPublicId,
+      { resource_type: 'video' },
+      (err, result) => {
+        if (err) throw new NotFoundException(err);
+        return result;
+      },
+    );
+    return result;
+  }
+  async destroyMultipleAudios(audioPublicIds: string[]) {
+    const result = await v2.api.delete_resources(
+      audioPublicIds,
+      { resource_type: 'video' },
+      (err, result) => {
+        if (err) throw new NotFoundException(err);
+        if (result?.deleted) return result;
+        else return { msg: 'Could not delete audios' };
+      },
+    );
+    return result;
+  }
 }

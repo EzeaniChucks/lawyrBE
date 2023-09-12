@@ -55,10 +55,12 @@ export class VideosController {
   async getAllVideos() {
     return this.videoservice.getAllVideoGroups();
   }
+
   @Get('get_single_video_group/:videoId')
   async getSingleVideo(@Param('videoId') videoId: string) {
     return this.videoservice.getSingleVideoGroup(videoId);
   }
+
   @Put('replace_single_video')
   @UseInterceptors(FileInterceptor('videoFile'))
   async ReplaceVideo(
@@ -83,6 +85,44 @@ export class VideosController {
       res,
     });
   }
+
+  @Put('edit_single_video_name')
+  async editSingleVideoName(
+    @Body()
+    body: {
+      name: string;
+      parentId: string;
+      singleVideoId: string;
+    },
+    @Res() res: Response,
+  ) {
+    const { parentId, singleVideoId, name } = body;
+    return this.videoservice.editSingleVideoName({
+      name,
+      parentId,
+      singleVideoId,
+      res,
+    });
+  }
+
+  @Put('edit_video_details')
+  async editVideoDetails(
+    @Body()
+    body: {
+      title: string;
+      description: string;
+      parentId: string;
+    },
+    @Res() res: Response,
+  ) {
+    const { parentId, title, description } = body;
+    return this.videoservice.editVideoDetails({
+      title,
+      description,
+      parentId,
+      res,
+    });
+  }
   @Delete('delete_single_video')
   async deleteSingleVideo(
     @Query()
@@ -96,6 +136,21 @@ export class VideosController {
     return this.videoservice.deleteSingleVideo({
       parentId,
       videoId,
+      res,
+    });
+  }
+
+  @Delete('delete_entire_video_group/:parentVideoId')
+  async deleteEntireVideoGroup(
+    @Param()
+    param: {
+      parentVideoId: string;
+    },
+    @Res() res: Response,
+  ) {
+    const { parentVideoId } = param;
+    return this.videoservice.deleteEntireVideoGroup({
+      parentVideoId,
       res,
     });
   }

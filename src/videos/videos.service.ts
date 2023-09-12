@@ -170,6 +170,7 @@ export class VideosService {
       throw new InternalServerErrorException({ msg: err?.message });
     }
   }
+
   async getSingleVideoGroup(videoId: string) {
     try {
       const singleVideoGroup = await this.videos
@@ -299,6 +300,92 @@ export class VideosService {
       return res.status(500).json(err.message);
     }
   }
+  async editVideoDetails({
+    title,
+    description,
+    parentId,
+    res,
+  }: {
+    title: string;
+    parentId: string;
+    description: string;
+    res: Response;
+  }) {
+    try {
+      const videos = await this.videos.findOneAndUpdate(
+        { _id: parentId },
+        { $set: { details: { title, description } } },
+        { new: true },
+      );
+      const childProcess = fork('./src/child.js');
+      let promise = new Promise<any>((resolve, reject) => {
+        childProcess.on('message', (receivedvids) => {
+          resolve(receivedvids);
+        });
+        childProcess.on('exit', (code, signal) => {
+          return res.status(400).json({
+            msg: 'something went wrong receing message from child process',
+            code,
+            signal,
+          });
+        });
+        childProcess.send(videos?.videos);
+      });
+      let response = await promise;
+      return res.status(200).json({
+        payload: {
+          _id: videos?._id,
+          details: videos?.details,
+          videos: response,
+        },
+      });
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
+  async editSingleVideoName({
+    name,
+    parentId,
+    singleVideoId,
+    res,
+  }: {
+    name: string;
+    parentId: string;
+    singleVideoId: string;
+    res: Response;
+  }) {
+    try {
+      const videos = await this.videos.findOneAndUpdate(
+        { _id: parentId, 'videos._id': singleVideoId },
+        { $set: { 'videos.$.name': name } },
+        { new: true },
+      );
+      const childProcess = fork('./src/child.js');
+      let promise = new Promise<any>((resolve, reject) => {
+        childProcess.on('message', (receivedvids) => {
+          resolve(receivedvids);
+        });
+        childProcess.on('exit', (code, signal) => {
+          return res.status(400).json({
+            msg: 'something went wrong receing message from child process',
+            code,
+            signal,
+          });
+        });
+        childProcess.send(videos.videos);
+      });
+      let response = await promise;
+      return res.status(200).json({
+        payload: {
+          _id: videos?._id,
+          details: videos?.details,
+          videos: response,
+        },
+      });
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
 
   async deleteSingleVideo({
     parentId,
@@ -364,14 +451,30 @@ export class VideosService {
     }
   }
 
-  async deleteEntireVideoGroup(parentId: string) {
+  async deleteEntireVideoGroup({
+    parentVideoId,
+    res,
+  }: {
+    parentVideoId: string;
+    res: Response;
+  }) {
     try {
-      const videoGroup = await this.videos.findOne({ _id: parentId });
-      const videoPublicIds = videoGroup.videos.map((eachVideo: any) => {
-        return eachVideo?.public_id;
-      });
+      const videoGroup = await this.videos.findOne({ _id: parentVideoId });
+      const videoPublicIds: string[] = videoGroup.videos.map(
+        (eachVideo: any) => {
+          return eachVideo?.public_id;
+        },
+      );
 
-      await this.videos.findOneAndDelete({ _id: parentId }, { new: true });
-    } catch (err) {}
+      await this.cloudinaryservice.destroyMultipleVideos(videoPublicIds);
+
+      await this.videos.findOneAndDelete({ _id: parentVideoId }, { new: true });
+      const allvideoGroups = await this.videos
+        .find()
+        .select('_id details createdAt updatedAt');
+      return res.status(200).json({ payload: allvideoGroups });
+    } catch (err) {
+      return res.status(500).json(err?.message);
+    }
   }
 }
