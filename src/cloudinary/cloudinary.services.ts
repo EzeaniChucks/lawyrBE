@@ -86,4 +86,62 @@ export class CloudinaryService {
     );
     return result;
   }
+  async uploadPdf(
+    file: any,
+  ): Promise<UploadApiResponse | UploadApiErrorResponse> {
+    const maxFileSize = 1024 * 1024 * 50;
+    return new Promise((resolve, reject) => {
+      const upload = v2.uploader.upload_stream(
+        { resource_type: 'auto', max_bytes: maxFileSize },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        },
+      );
+      toStream(file.buffer).pipe(upload);
+    });
+  }
+  async urlPdf(uploadDocx_pdfPublicId: string, options: any) {
+    return v2.url(uploadDocx_pdfPublicId, options);
+  }
+  async destroyPdf(uploadDocx_pdfPublicId: string) {
+    const result = await v2.uploader.destroy(
+      uploadDocx_pdfPublicId,
+      { resource_type: 'pdf' },
+      (err, result) => {
+        if (err) throw new NotFoundException(err);
+        return result;
+      },
+    );
+    return result;
+  }
+  async uploadDoc(
+    file: any,
+  ): Promise<UploadApiResponse | UploadApiErrorResponse> {
+    const maxFileSize = 1024 * 1024 * 50;
+    return new Promise((resolve, reject) => {
+      const upload = v2.uploader.upload_stream(
+        { resource_type: 'auto', max_bytes: maxFileSize },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        },
+      );
+      toStream(file.buffer).pipe(upload);
+    });
+  }
+  async urlDoc(uploadDocx_pdfPublicId: string, options: any) {
+    return v2.url(uploadDocx_pdfPublicId, options);
+  }
+  async destroyDoc(uploadDocx_pdfPublicId: string) {
+    const result = await v2.uploader.destroy(
+      uploadDocx_pdfPublicId,
+      { resource_type: 'auto' },
+      (err, result) => {
+        if (err) throw new NotFoundException(err);
+        return result;
+      },
+    );
+    return result;
+  }
 }
