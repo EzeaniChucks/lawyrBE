@@ -9,13 +9,14 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.services';
 import { VideoDetailsDTO } from './videos.dto';
 import { ChildProcess, fork } from 'child_process';
 import { Request, Response } from 'express';
-import { jwtIsValid } from 'src/utils';
+import { canDeleteResource, jwtIsValid } from 'src/utils';
 import { File } from 'buffer';
 
 @Injectable()
 export class VideosService {
   constructor(
     @InjectModel('videos') private readonly videos: Model<any>,
+    @InjectModel('contents') private readonly contents: Model<any>,
     private readonly cloudinaryservice: CloudinaryService,
   ) {}
   // private childProcess: ChildProcess;
@@ -386,7 +387,6 @@ export class VideosService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-
   async deleteSingleVideo({
     parentId,
     videoId,
@@ -450,7 +450,6 @@ export class VideosService {
       res.status(500).json({ msg: err?.message });
     }
   }
-
   async deleteEntireVideoGroup({
     parentVideoId,
     res,
@@ -459,6 +458,18 @@ export class VideosService {
     res: Response;
   }) {
     try {
+      const canDelete = await canDeleteResource(
+        this.videos,
+        parentVideoId,
+        this.contents,
+      );
+      if (!canDelete?.payload) {
+        return res.status(400).json({
+          msg: `This resource belongs to superFolder ${canDelete?.extra}. You can edit the resource but deletion is not possible. Remove resource from '${canDelete?.extra}' to enable deletion.`,
+        });
+      } else if (typeof canDelete?.payload === 'string') {
+        return res.status(400).json({ msg: canDelete });
+      }
       const videoGroup = await this.videos.findOne({ _id: parentVideoId });
       const videoPublicIds: string[] = videoGroup.videos.map(
         (eachVideo: any) => {

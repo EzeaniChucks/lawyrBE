@@ -7,12 +7,15 @@ import {
   essayDetailsDTO,
   essayIdDTO,
 } from 'src/essays/essays.dto';
-import { jwtIsValid } from 'src/utils';
+import { canDeleteResource, jwtIsValid } from 'src/utils';
 import { Request, Response } from 'express';
 
 @Injectable()
 export class EssaysService {
-  constructor(@InjectModel('essays') private readonly essay: Model<any>) {}
+  constructor(
+    @InjectModel('essays') private readonly essay: Model<any>,
+    @InjectModel('contents') private readonly contents: Model<any>,
+  ) {}
   async createEssay(
     details: cardDetailsDTO,
     essayBody: essayBodyDTO,
@@ -90,6 +93,18 @@ export class EssaysService {
   }
   async deleteEssay(essayId: essayIdDTO, req: Request, res: Response) {
     try {
+      const canDelete = await canDeleteResource(
+        this.essay,
+        essayId,
+        this.contents,
+      );
+      if (!canDelete?.payload) {
+        return res.status(400).json({
+          msg: `This resource belongs to superFolder ${canDelete?.extra}. You can edit the resource but deletion is not possible. Remove resource from '${canDelete?.extra}' to enable deletion.`,
+        });
+      } else if (typeof canDelete?.payload === 'string') {
+        return res.status(400).json({ msg: canDelete });
+      }
       const deleteEssay = await this.essay.findOneAndDelete(
         { _id: essayId },
         { new: true },
@@ -97,7 +112,7 @@ export class EssaysService {
       if (!deleteEssay) {
         return res
           .status(400)
-          .json({ msg: 'This mcq never existed or has been deleted' });
+          .json({ msg: 'This essay never existed or has been deleted' });
       }
       return this.getAllEssays(req, res);
     } catch (err) {

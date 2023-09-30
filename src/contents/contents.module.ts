@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { ContentsController } from './contents.controller';
+import { ContentsService } from './contents.service';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
-import { audioSchema } from '../audios/audio.model';
+import { MongooseModule } from '@nestjs/mongoose';
+import { contentsSchema } from './contents.model';
+import { audioSchema } from 'src/audios/audio.model';
 import { mcqSchema } from 'src/mcqs/mcq.model';
 import { docx_pdfSchema } from 'src/books/books.model';
 import { videoSchema } from 'src/videos/videos.model';
 import { essaysSchema } from 'src/essays/essays.model';
 import { flashCardSchema } from 'src/flashcard/flashCards.model';
-import { AdminController } from './admin.controller';
-import { AdminService } from './admin.service';
-import { contentsSchema } from 'src/contents/contents.model';
 
 @Module({
   imports: [
@@ -24,7 +24,8 @@ import { contentsSchema } from 'src/contents/contents.model';
     ]),
     CloudinaryModule,
   ],
-  controllers: [AdminController],
-  providers: [AdminService],
+  controllers: [ContentsController],
+  providers: [ContentsService],
+  exports: [ContentsService],
 })
-export class AdminModule {}
+export class ContentsModule {}

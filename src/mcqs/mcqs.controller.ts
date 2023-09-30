@@ -35,11 +35,7 @@ export class McqsController {
     return await this.mcqservice.getMCQ(mcqId, res);
   }
   @Get('get_all_mcqs')
-  async getAllMCQs(
-    // @Param('mcqId') mcqId: cardIdDTO,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  async getAllMCQs(@Req() req: Request, @Res() res: Response) {
     return await this.mcqservice.getAllMCQs(req, res);
   }
   @Put('update_mcq')

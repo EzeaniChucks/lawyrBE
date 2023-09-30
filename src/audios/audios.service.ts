@@ -7,8 +7,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Request, Response } from 'express';
 import { Model } from 'mongoose';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.services';
-import { AudioDetailsDTO } from './audios.dto';
-import { jwtIsValid } from 'src/utils';
+import { AudioDetailsDTO, FringeData } from './audios.dto';
+import { canDeleteResource, jwtIsValid } from 'src/utils';
 import { fork } from 'child_process';
 import { File } from 'buffer';
 
@@ -16,6 +16,7 @@ import { File } from 'buffer';
 export class AudiosService {
   constructor(
     @InjectModel('audios') private readonly audios: Model<any>,
+    @InjectModel('contents') private readonly contents: Model<any>,
     private readonly cloudinaryservice: CloudinaryService,
   ) {}
   // private childProcess: ChildProcess;
@@ -453,6 +454,19 @@ export class AudiosService {
     res: Response;
   }) {
     try {
+      const canDelete = await canDeleteResource(
+        this.audios,
+        parentaudioId,
+        this.contents,
+      );
+      if (!canDelete.payload) {
+        return res.status(400).json({
+          msg: `This resource belongs to superFolder ${canDelete?.extra}. You can edit the resource but deletion is not possible. Remove resource from '${canDelete?.extra}' to enable deletion.`,
+        });
+      } else if (typeof canDelete.payload === 'string') {
+        return res.status(400).json({ msg: canDelete });
+      }
+
       const audioGroup = await this.audios.findOne({ _id: parentaudioId });
       const audioPublicIds: string[] = audioGroup.audios.map(
         (eachaudio: any) => {

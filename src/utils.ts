@@ -5,6 +5,9 @@ import {
 } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { Response } from 'express';
+import { mcqIdDTO } from './mcqs/mcqs.dto';
+import mongoose, { Model } from 'mongoose';
+import { contentsSchema } from './contents/contents.model';
 
 export const createJwt = async (body: {
   _id: string;
@@ -56,4 +59,26 @@ export const attachCookiesToResponse = async (
     secure: process.env.NODE_ENV === 'production',
     signed: true,
   });
+};
+// const contents = mongoose.model('contents', contentsSchema);
+export const canDeleteResource = async (
+  resource: any,
+  resourceId: any,
+  contents: Model<any>,
+) => {
+  const result = await resource.findOne({ _id: resourceId });
+  try {
+    if (result) {
+      if (result?.parentIds?.length !== 0) {
+        const contentName = await contents.findOne({
+          _id: result?.parentIds[0],
+        });
+        return { payload: false, extra: contentName?.name };
+      } else {
+        return { payload: true, extra: '' };
+      }
+    }
+  } catch (err) {
+    return { payload: err.message, extra: '' };
+  }
 };

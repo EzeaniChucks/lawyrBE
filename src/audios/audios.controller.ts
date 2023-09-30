@@ -39,7 +39,6 @@ export class AudiosController {
       return res.status(400).json('No file uploaded');
     }
     const { name, audioActionType, parentId, title, description } = body;
-    // console.log(name, audioActionType, parentId, title, description);
     return this.audioservice.uploadAudio(
       file,
       parentId,

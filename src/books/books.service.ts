@@ -9,7 +9,7 @@ import { Docx_pdfDetailsDTO } from './books.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.services';
-import { jwtIsValid } from 'src/utils';
+import { canDeleteResource, jwtIsValid } from 'src/utils';
 import { fork } from 'child_process';
 import { File } from 'buffer';
 
@@ -17,6 +17,7 @@ import { File } from 'buffer';
 export class Docx_pdfsService {
   constructor(
     @InjectModel('docxpdf') private readonly docx_pdf: Model<any>,
+    @InjectModel('contents') private readonly contents: Model<any>,
     private readonly cloudinaryservice: CloudinaryService,
   ) {}
   // private childProcess: ChildProcess;
@@ -351,6 +352,18 @@ export class Docx_pdfsService {
     res: Response;
   }) {
     try {
+      const canDelete = await canDeleteResource(
+        this.docx_pdf,
+        docx_pdfId,
+        this.contents,
+      );
+      if (!canDelete?.payload) {
+        return res.status(400).json({
+          msg: `This resource belongs to superFolder ${canDelete?.extra}. You can edit the resource but deletion is not possible. Remove resource from '${canDelete?.extra}' to enable deletion.`,
+        });
+      } else if (typeof canDelete?.payload === 'string') {
+        return res.status(400).json({ msg: canDelete });
+      }
       const singledocx_pdfObject = await this.docx_pdf.findOne(
         {
           _id: parentId,

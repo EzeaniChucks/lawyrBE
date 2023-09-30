@@ -13,22 +13,25 @@ import { AudiosModule } from './audios/audios.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { MulterModule } from '@nestjs/platform-express';
 import {diskStorage} from 'multer'
+import { AdminModule } from './admin/admin.module';
+import { ContentsModule } from './contents/contents.module';
 // import {CloudinaryStorage} from 'multer-storage-cloudinary'
 // MulterModule.registerAsync({
-    //   useFactory: () => ({
-    //     // storage: diskStorage({ destination: './videos/videos.module' }),
-    //     storage: new CloudinaryStorage,
-    //     limits:{fileSize:1024*1024*50}
-    //   }),
-    // }),
-
+//   useFactory: () => ({
+//     // storage: diskStorage({ destination: './videos/videos.module' }),
+//     storage: new CloudinaryStorage,
+//     limits:{fileSize:1024*1024*50}
+//   }),
+// }),
 
 @Module({
   imports: [
+    AdminModule,
     AuthModule,
     ConfigModule.forRoot(),
     MongooseModule.forRoot(process.env.DB_CONNECTION),
     CloudinaryModule,
+    ContentsModule,
     EssaysModule,
     FlashCardsModule,
     BooksModule,

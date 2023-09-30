@@ -8,6 +8,8 @@ export const authSchema = new mongoose.Schema(
     password: { type: String, require: true },
     email: { type: String, require: true, unique: true },
     isAdmin: { type: Boolean, default: false },
+    isSubAdmin: { type: Boolean, default: false },
+    assets: { subscription: [], purchases: [] },
   },
   { timestamps: true },
 );

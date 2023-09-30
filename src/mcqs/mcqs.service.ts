@@ -7,7 +7,7 @@ import {
   cardIdDTO,
   cardQAPairDTO,
 } from 'src/flashcard/flashcards.dto';
-import { jwtIsValid } from 'src/utils';
+import { canDeleteResource, jwtIsValid } from 'src/utils';
 import {
   MCQBodyDTO,
   mcqBodyANDDetails,
@@ -17,7 +17,10 @@ import {
 
 @Injectable()
 export class McqsService {
-  constructor(@InjectModel('mcqs') private readonly mcqs: Model<any>) {}
+  constructor(
+    @InjectModel('mcqs') private readonly mcqs: Model<any>,
+    @InjectModel('contents') private readonly contents: Model<any>,
+  ) {}
   async createMCQ(
     details: cardDetailsDTO,
     mcqBody: MCQBodyDTO,
@@ -91,6 +94,18 @@ export class McqsService {
   }
   async deleteMCQ(mcqId: mcqIdDTO, req: Request, res: Response) {
     try {
+      const canDelete = await canDeleteResource(
+        this.mcqs,
+        mcqId,
+        this.contents,
+      );
+      if (!canDelete?.payload) {
+        return res.status(400).json({
+          msg: `This resource belongs to superFolder ${canDelete?.extra}. You can edit the resource but deletion is not possible. Remove resource from '${canDelete?.extra}' to enable deletion.`,
+        });
+      } else if (typeof canDelete?.payload === 'string') {
+        return res.status(400).json({ msg: canDelete });
+      }
       const deletemcq = await this.mcqs.findOneAndDelete(
         { _id: mcqId },
         { new: true },

@@ -127,18 +127,4 @@ export class Docx_pdfsController {
       res,
     });
   }
-  //   @Delete('delete_entire_docx_pdf_/:parentdocx_pdfId')
-  //   async deleteEntiredocx_pdf(
-  //     @Param()
-  //     param: {
-  //       parentdocx_pdfId: string;
-  //     },
-  //     @Res() res: Response,
-  //   ) {
-  //     const { parentdocx_pdfId } = param;
-  //     return this.docx_pdfservice.deleteEntiredocx_pdfs({
-  //       parentdocx_pdfId,
-  //       res,
-  //     });
-  //   }
 }

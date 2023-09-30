@@ -26,3 +26,18 @@ export type AudiossObject = {
   createdAt?: Date | string | number;
   updatedAt?: Date | string | number;
 };
+
+export type FringeData = {
+  searchTags: string[];
+  parentIds: string[];
+  isSubscription: boolean;
+  isPurchase: boolean;
+  productPrice: number;
+  productPriceCurrency: 'NGN' | string;
+  subscriptionPrice: number;
+  subscriptionPriceCurrency: 'NGN' | string;
+  subscriptionDurationNo: 0;
+  subscriptionDurationUnit: 'days' | 'weeks' | 'months' | 'years';
+  subscribedUsersIds: string[];
+  paidUsersIds: string[];
+};

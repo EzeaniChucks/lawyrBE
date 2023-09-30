@@ -26,4 +26,8 @@ export class AuthController {
   async register(@Body() body: RegisterDTO, @Res() res: Response) {
     return await this.authsevice.register(body, res);
   }
+  @Get('logout')
+  async signout(@Res() res: Response) {
+    return this.authsevice.signout(res);
+  }
 }

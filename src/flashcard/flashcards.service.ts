@@ -6,12 +6,13 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { cardDetailsDTO, cardIdDTO, cardQAPairDTO } from './flashcards.dto';
-import { jwtIsValid } from 'src/utils';
+import { canDeleteResource, jwtIsValid } from 'src/utils';
 import { Request, Response } from 'express';
 @Injectable()
 export class FlashCardsService {
   constructor(
     @InjectModel('flashcards') private readonly flashcards: Model<any>,
+    @InjectModel('contents') private readonly contents: Model<any>,
   ) {}
   async createFlashCard(
     details: cardDetailsDTO,
@@ -80,6 +81,18 @@ export class FlashCardsService {
   }
   async deleteFlashCard(flashcardId: cardIdDTO, req: Request, res: Response) {
     try {
+      const canDelete = await canDeleteResource(
+        this.flashcards,
+        flashcardId,
+        this.contents,
+      );
+      if (!canDelete?.payload) {
+        return res.status(400).json({
+          msg: `This resource belongs to superFolder ${canDelete?.extra}. You can edit the resource but deletion is not possible. Remove resource from '${canDelete?.extra}' to enable deletion.`,
+        });
+      } else if (typeof canDelete?.payload === 'string') {
+        return res.status(400).json({ msg: canDelete });
+      }
       const deleteflashcard = await this.flashcards.findOneAndDelete(
         { _id: flashcardId },
         { new: true },

@@ -91,7 +91,6 @@ export class AuthService {
   }
   async register(body: RegisterDTO, res: Response) {
     const { email, password, firstName, lastName } = body;
-    // console.log(body);
     try {
       if (!email || !password || !firstName || !lastName) {
         throw new BadRequestException({
@@ -106,16 +105,29 @@ export class AuthService {
       }
       const user = await this.user.create({ ...body, password: hashedPass });
       const tokenUser = {
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phoneNumber: user.phoneNumber,
-        isAdmin: user.isAdmin,
+        _id: user?._id,
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        phoneNumber: user?.phoneNumber || '',
+        isAdmin: user?.isAdmin,
       };
       await attachCookiesToResponse(res, tokenUser);
       return res.status(200).json({ msg: 'Success' });
     } catch (err) {
       return res.status(500).json({ msg: err?.message });
+    }
+  }
+  async signout(res:Response){
+    try{
+      res.cookie('accessToken', {}, {
+        httpOnly: true,
+        expires: new Date(Date.now()),
+        secure: process.env.NODE_ENV === 'production',
+        signed: true,
+      });
+      return res.status(200).json({msg:'logout successful'})
+    } catch(err){
+      return res.status(500).json({mag:err?.message})
     }
   }
 }
