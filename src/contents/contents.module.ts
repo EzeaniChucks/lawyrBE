@@ -16,7 +16,7 @@ import { flashCardSchema } from 'src/flashcard/flashCards.model';
     MongooseModule.forFeature([{ name: 'contents', schema: contentsSchema }]),
     MongooseModule.forFeature([{ name: 'audios', schema: audioSchema }]),
     MongooseModule.forFeature([{ name: 'mcqs', schema: mcqSchema }]),
-    MongooseModule.forFeature([{ name: 'docxpdf', schema: docx_pdfSchema }]),
+    MongooseModule.forFeature([{ name: 'docxpdfs', schema: docx_pdfSchema }]),
     MongooseModule.forFeature([{ name: 'videos', schema: videoSchema }]),
     MongooseModule.forFeature([{ name: 'essays', schema: essaysSchema }]),
     MongooseModule.forFeature([

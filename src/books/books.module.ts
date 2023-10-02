@@ -8,7 +8,7 @@ import { contentsSchema } from 'src/contents/contents.model';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: 'docxpdf', schema: docx_pdfSchema }]),
+    MongooseModule.forFeature([{ name: 'docxpdfs', schema: docx_pdfSchema }]),
     MongooseModule.forFeature([{ name: 'contents', schema: contentsSchema }]),
     CloudinaryModule,
   ],

@@ -66,6 +66,19 @@ export class ContentsController {
     const { resourceId, resourceName } = body;
     return this.contentservice.doesResourceExist(resourceId, resourceName, res);
   }
+  @Post('can_resource_be_deleted')
+  async canResourceBeDeleted(
+    @Body()
+    body: { resourceId: string | undefined; resourceName: string },
+    @Res() res: Response,
+  ) {
+    const { resourceId, resourceName } = body;
+    return this.contentservice.canResourceBeDeleted(
+      resourceId,
+      resourceName,
+      res,
+    );
+  }
   @Put('add_parent_ids_to_resource')
   async addParentIdsToResource(
     @Body()
@@ -91,6 +104,7 @@ export class ContentsController {
       res,
     });
   }
+
   @Put('monify_resource')
   async monifyResource(
     @Body()
@@ -114,6 +128,19 @@ export class ContentsController {
       resourceName,
       resourceId,
       settingsObj,
+      req,
+      res,
+    });
+  }
+
+  @Put('unmonify_resource')
+  async umonifyResource(
+    @Body() body: { resourceName: string; resourceId: string },
+    @Res() res: Response,
+    @Req() req: Request,
+  ) {
+    return this.contentservice.unmonifyResource({
+      ...body,
       req,
       res,
     });

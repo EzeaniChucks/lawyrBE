@@ -10,13 +10,17 @@ import { flashCardSchema } from 'src/flashcard/flashCards.model';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { contentsSchema } from 'src/contents/contents.model';
+import { authSchema } from 'src/auth/auth.model';
+import { accessSchema } from './admin.model';
 
 @Module({
   imports: [
+    MongooseModule.forFeature([{ name: 'accesses', schema: accessSchema }]),
     MongooseModule.forFeature([{ name: 'contents', schema: contentsSchema }]),
+    MongooseModule.forFeature([{ name: 'auths', schema: authSchema }]),
     MongooseModule.forFeature([{ name: 'audios', schema: audioSchema }]),
     MongooseModule.forFeature([{ name: 'mcqs', schema: mcqSchema }]),
-    MongooseModule.forFeature([{ name: 'docxpdf', schema: docx_pdfSchema }]),
+    MongooseModule.forFeature([{ name: 'docxpdfs', schema: docx_pdfSchema }]),
     MongooseModule.forFeature([{ name: 'videos', schema: videoSchema }]),
     MongooseModule.forFeature([{ name: 'essays', schema: essaysSchema }]),
     MongooseModule.forFeature([

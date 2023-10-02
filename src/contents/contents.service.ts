@@ -16,7 +16,7 @@ export class ContentsService {
   constructor(
     @InjectModel('contents') private readonly content: Model<any>,
     @InjectModel('mcqs') private readonly mcq: Model<any>,
-    @InjectModel('docxpdf') private readonly pdf: Model<any>,
+    @InjectModel('docxpdfs') private readonly pdf: Model<any>,
     @InjectModel('audios') private readonly audio: Model<any>,
     @InjectModel('videos') private readonly video: Model<any>,
     @InjectModel('essays') private readonly essay: Model<any>,
@@ -92,7 +92,6 @@ export class ContentsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-
   async doesResourceExist(
     resourceId: string | undefined,
     resourceName: string,
@@ -180,6 +179,101 @@ export class ContentsService {
       return res.status(500).json({ msg: err.message });
     }
   }
+  async canResourceBeDeleted(
+    resourceId: string | undefined,
+    resourceName: string,
+    res: Response,
+  ) {
+    try {
+      if (resourceName !== 'folder') {
+        let can_resource_be_deleted = true;
+        let amount_of_subscribers = 0;
+        let amount_of_purchasers = 0;
+        if (resourceName === 'flashcard') {
+          let result = await this.flashcard.findOne({ _id: resourceId });
+          if (
+            result?.subscribedUsersIds?.length !== 0 ||
+            result?.paidUsersIds?.length !== 0
+          ) {
+            amount_of_subscribers = result?.subscribedUsersIds?.length;
+            amount_of_purchasers = result?.paidUsersIds?.length;
+            can_resource_be_deleted = false;
+          }
+        }
+        if (resourceName === 'mcq') {
+          let result = await this.mcq.findOne({ _id: resourceId });
+          if (
+            result?.subscribedUsersIds?.length !== 0 ||
+            result?.paidUsersIds?.length !== 0
+          ) {
+            amount_of_subscribers = result?.subscribedUsersIds?.length;
+            amount_of_purchasers = result?.paidUsersIds?.length;
+            can_resource_be_deleted = false;
+          }
+        }
+        if (resourceName === 'video') {
+          let result = await this.video.findOne({ _id: resourceId });
+          if (
+            result?.subscribedUsersIds?.length !== 0 ||
+            result?.paidUsersIds?.length !== 0
+          ) {
+            amount_of_subscribers = result?.subscribedUsersIds?.length;
+            amount_of_purchasers = result?.paidUsersIds?.length;
+            can_resource_be_deleted = false;
+          }
+        }
+        if (resourceName === 'audio') {
+          let result = await this.audio.findOne({ _id: resourceId });
+          if (
+            result?.subscribedUsersIds?.length !== 0 ||
+            result?.paidUsersIds?.length !== 0
+          ) {
+            amount_of_subscribers = result?.subscribedUsersIds?.length;
+            amount_of_purchasers = result?.paidUsersIds?.length;
+            can_resource_be_deleted = false;
+          }
+        }
+        if (resourceName === 'essay') {
+          let result = await this.essay.findOne({ _id: resourceId });
+          if (
+            result?.subscribedUsersIds?.length !== 0 ||
+            result?.paidUsersIds?.length !== 0
+          ) {
+            amount_of_subscribers = result?.subscribedUsersIds?.length;
+            amount_of_purchasers = result?.paidUsersIds?.length;
+            can_resource_be_deleted = false;
+          }
+        }
+        if (resourceName === 'pdf') {
+          let result = await this.pdf.findOne({ _id: resourceId });
+          if (
+            result?.subscribedUsersIds?.length !== 0 ||
+            result?.paidUsersIds?.length !== 0
+          ) {
+            amount_of_subscribers = result?.subscribedUsersIds?.length;
+            amount_of_purchasers = result?.paidUsersIds?.length;
+            can_resource_be_deleted = false;
+          }
+        }
+        if (!can_resource_be_deleted) {
+          return res.status(400).json({
+            msg: `Resource has ${amount_of_subscribers} subscribers and ${amount_of_purchasers} paid users. subcription and paid users list must be empty for deletion to happen.`,
+          });
+        } else {
+          return res
+            .status(200)
+            .json({ payload: 'success', msg: 'content approved for deletion' });
+        }
+      } else {
+        return res
+          .status(400)
+          .json({ msg: "Bad request. File name cannot be 'folder'" });
+      }
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
+
   async addParentIdsToResource({
     resourceName,
     resourceId,
@@ -378,6 +472,78 @@ export class ContentsService {
           await this.pdf.findOneAndUpdate(
             { _id: resourceId },
             { $set: { ...settingsObj } },
+            { new: true },
+          );
+        }
+        return res.status(200).json({ payload: 'success' });
+      } else {
+        return res.status(400).json({ msg: 'Forbidden request' });
+      }
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
+
+  async unmonifyResource({
+    resourceName,
+    resourceId,
+    req,
+    res,
+  }: {
+    resourceName: string;
+    resourceId: string;
+    req: Request;
+    res: Response;
+  }) {
+    let settingsobj = {
+      isPurchase: false,
+      isSubscription: true,
+      subscriptionDurationNo: 0,
+      subscriptionDurationUnit: 'days',
+      subscriptionPrice: 0,
+    };
+    try {
+      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+      if (decoded?.isAdmin === true) {
+        if (resourceName === 'flashcard') {
+          await this.flashcard.findOneAndUpdate(
+            { _id: resourceId },
+            { $set: { ...settingsobj } },
+            { new: true },
+          );
+        }
+        if (resourceName === 'mcq') {
+          await this.mcq.findOneAndUpdate(
+            { _id: resourceId },
+            { $set: { ...settingsobj } },
+            { new: true },
+          );
+        }
+        if (resourceName === 'video') {
+          await this.video.findOneAndUpdate(
+            { _id: resourceId },
+            { $set: { ...settingsobj } },
+            { new: true },
+          );
+        }
+        if (resourceName === 'audio') {
+          await this.audio.findOneAndUpdate(
+            { _id: resourceId },
+            { $set: { ...settingsobj } },
+            { new: true },
+          );
+        }
+        if (resourceName === 'essay') {
+          await this.essay.findOneAndUpdate(
+            { _id: resourceId },
+            { $set: { ...settingsobj } },
+            { new: true },
+          );
+        }
+        if (resourceName === 'pdf') {
+          await this.pdf.findOneAndUpdate(
+            { _id: resourceId },
+            { $set: { ...settingsobj } },
             { new: true },
           );
         }

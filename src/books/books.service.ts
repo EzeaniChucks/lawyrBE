@@ -16,7 +16,7 @@ import { File } from 'buffer';
 @Injectable()
 export class Docx_pdfsService {
   constructor(
-    @InjectModel('docxpdf') private readonly docx_pdf: Model<any>,
+    @InjectModel('docxpdfs') private readonly docx_pdf: Model<any>,
     @InjectModel('contents') private readonly contents: Model<any>,
     private readonly cloudinaryservice: CloudinaryService,
   ) {}
