@@ -10,7 +10,12 @@ import { attachCookiesToResponse, jwtIsValid } from 'src/utils';
 import { InjectModel } from '@nestjs/mongoose';
 import { Date, Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
-import { MCQScenarios, MCQuestionsDTO, mcqDetailsDTO } from 'src/mcqs/mcqs.dto';
+import {
+  MCQScenarios,
+  MCQuestionsDTO,
+  mcqBodyANDDetails,
+  mcqDetailsDTO,
+} from 'src/mcqs/mcqs.dto';
 
 @Injectable()
 export class AuthService {
@@ -172,14 +177,35 @@ export class AuthService {
     try {
       const userobj = await this.user.findOne({ _id: userId });
       const currentMCQ = userobj.mcqs.find(
-        (each: MCQuestionsDTO) => each._id.toString() === mcqId,
+        (each: any) => each._id.toString() === mcqId,
       );
       if (!userobj || !currentMCQ) {
         return res
           .status(400)
           .json({ msg: 'Bad request. Something went wrong.' });
       }
+      // let newres = currentMCQ.QAs.map((element: MCQuestionsDTO) => {
+      //   delete element.answer;
+      //   return element;
+      // });
+      // console.log(newres, currentMCQ);
       return res.status(200).json({ msg: 'success', payload: currentMCQ });
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
+  async fetchAllCompletedMCQs(userId: string, res: Response) {
+    try {
+      const userobj = await this.user.findOne({ _id: userId });
+      const allMCQs = userobj.mcqs.map((each: any) => {
+        return { mcqDetails: each.mcqDetails, _id: each._id };
+      });
+      if (!userobj || !allMCQs) {
+        return res
+          .status(400)
+          .json({ msg: 'Bad request. Something went wrong.' });
+      }
+      return res.status(200).json({ msg: 'success', payload: allMCQs });
     } catch (err) {
       return res.status(500).json({ msg: err.message });
     }
@@ -192,37 +218,35 @@ export class AuthService {
   ) {
     try {
       const checkuser = await this.user.findOne({ _id: userId });
-      const isDateExpired = checkuser.mcqs.QAs.find(
-        (eachQa: MCQuestionsDTO) => {
-          return eachQa?._id === mcqId;
-        },
-      );
+      const isDateExpired = checkuser?.mcqs?.find((eachQa: MCQuestionsDTO) => {
+        return eachQa?._id.toString() === mcqId;
+      });
       if (!isDateExpired) {
         return res
           .status(400)
-          .json({ msg: 'Bad request. Something went off.' });
+          .json({ msg: 'Bad request. Could not determine date expiration.' });
       }
-      if (isDateExpired.expiryDate <= new Date()) {
+      if (isDateExpired?.expiryDate <= new Date()) {
         return res.status(400).json({
           msg: 'You cannot pick answers on an expired Test. Try taking a new test',
         });
       }
-      const userobj = await this.user.findOneAndUpdate(
+      const userobj = await this?.user?.findOneAndUpdate(
         { _id: userId, 'mcqs._id': mcqId },
         { $set: { 'mcqs.$.QAs': QAs } },
         { new: true },
       );
 
       //blocking code below. Will put it in a child process later
-      const currentMCQ = userobj.mcqs.find(
+      const currentMCQ = userobj?.mcqs?.find(
         (each: MCQuestionsDTO) => each?._id.toString() === mcqId,
       );
       //end of blocking code.
 
       if (!userobj || !currentMCQ) {
-        return res
-          .status(400)
-          .json({ msg: 'Bad request. Something went off.' });
+        return res.status(400).json({
+          msg: 'Bad request. Something went wrong. Please try again.',
+        });
       }
 
       return res.status(200).json({ msg: 'success', payload: currentMCQ });
@@ -242,7 +266,7 @@ export class AuthService {
         { $set: { 'mcqs.$.QAs': QAs } },
         { new: true },
       );
-      const currentMCQ = userobj.mcqs.find(
+      const currentMCQ = userobj?.mcqs?.find(
         (each: MCQuestionsDTO) => each?._id.toString() === mcqId,
       );
       let totalAnsweredQuestions = 0;

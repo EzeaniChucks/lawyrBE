@@ -78,6 +78,18 @@ export class AuthController {
     const { userId, mcqId } = param;
     return this.authsevice.fetchCurrentOngoingMCQ(userId, mcqId, res);
   }
+  @Get('fetch_all_completed_mcqs/:userId')
+  async fetchAllCompletedMCQs(
+    @Param()
+    param: {
+      userId: string;
+    },
+    @Res() res: Response,
+  ) {
+    const { userId } = param;
+    return this.authsevice.fetchAllCompletedMCQs(userId, res);
+  }
+
   @Put('edit_ongoing_mcq')
   async editOngoingMCQ(
     @Body()

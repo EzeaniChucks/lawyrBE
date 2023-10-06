@@ -45,3 +45,19 @@ export const mcqSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+export const groupTestSchema = new mongoose.Schema(
+  {
+    creatorId: { type: mongoose.SchemaTypes.ObjectId, required: true },
+    invitees: [{ id: mongoose.SchemaTypes.ObjectId, isQualified:{type:Boolean, default:false}}],
+    submitedTests:[],
+    testHasStarted:{type: Boolean, default:false},
+    testEnded:{type: Boolean, default:false},
+  },
+  { timestamps: true },
+);
+
+//invite user
+//when user pays, change their isReady status to ready
+//once creator starts test, send tests to only ready participants.
+//join test button shows 'Ongoing' if test has a timer?
+//testHasStarted variable is false for all participants. Creator dispatches it 
