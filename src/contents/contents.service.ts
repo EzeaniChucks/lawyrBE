@@ -273,7 +273,6 @@ export class ContentsService {
       return res.status(500).json({ msg: err.message });
     }
   }
-
   async addParentIdsToResource({
     resourceName,
     resourceId,
@@ -340,7 +339,6 @@ export class ContentsService {
       return res.status(500).json({ msg: err.message });
     }
   }
-
   async removeParentIdsFromResource({
     resourceName,
     resourceId,
@@ -405,7 +403,6 @@ export class ContentsService {
       return res.status(500).json({ msg: err.message });
     }
   }
-
   async monifyResource({
     resourceName,
     resourceId,

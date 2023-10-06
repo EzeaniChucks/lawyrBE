@@ -45,7 +45,7 @@ export class McqsService {
     try {
       const mcqs = await this.mcqs
         .findOne({ _id: mcqId })
-        .select('details _id scenarios QAs');
+        .select('details _id scenarios QAs creatorId');
       return res.status(200).json({ msg: 'success', payload: mcqs });
     } catch (err) {
       return res.status(500).json({ msg: err?.message });

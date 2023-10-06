@@ -8,6 +8,7 @@ export class mcqIdDTO {
 }
 
 export type MCQuestionsDTO = {
+  _id?: string;
   question: string;
   type: string;
   questionNum: string | number;
@@ -16,14 +17,16 @@ export type MCQuestionsDTO = {
   C: string;
   D: string;
   answer: 'A' | 'B' | 'C' | 'D';
+  candidate_answer?: string;
   explanation: string;
 };
 
+export type MCQScenarios = {
+  text: string;
+  linkedTo: string[];
+};
 export type MCQBodyDTO = {
-  scenarios: {
-    text: string;
-    linkedTo: string[];
-  }[];
+  scenarios: MCQScenarios[];
   QAs: MCQuestionsDTO[];
 };
 export class mcqBodyANDDetails {

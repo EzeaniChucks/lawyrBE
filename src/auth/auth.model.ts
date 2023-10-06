@@ -13,7 +13,11 @@ export const authSchema = new mongoose.Schema(
     mcqs: [
       {
         creatorId: { type: mongoose.SchemaTypes.ObjectId, required: true },
-        details: {
+        clonedresourceId: {
+          type: mongoose.SchemaTypes.ObjectId,
+          required: true,
+        },
+        mcqDetails: {
           title: { type: String, required: true },
           description: { type: String, required: true },
         },
@@ -35,11 +39,20 @@ export const authSchema = new mongoose.Schema(
             candidate_answer: {
               type: String,
               default: '',
-              enum: ['A', 'B', 'C', 'D'],
+              enum: ['A', 'B', 'C', 'D', ''],
             },
             explanation: { type: String },
           },
         ],
+        expiryDate: { type: Date },
+        status: {
+          type: String,
+          default: 'ongoing',
+          enum: ['ongoing', 'completed'],
+        },
+        totalAnsweredQuestions: { type: Number, default: 0 },
+        totalRightQuestions: { type: Number, default: 0 },
+        totalWrongQuestions: { type: Number, default: 0 },
       },
     ],
     userStatus: { type: String, default: 'active', enum: ['active', 'banned'] },
