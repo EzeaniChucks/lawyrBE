@@ -273,6 +273,111 @@ export class ContentsService {
       return res.status(500).json({ msg: err.message });
     }
   }
+  async canUserAccessResource(
+    resourceId: string | undefined,
+    resourceName: string,
+    userId: string,
+    res: Response,
+  ) {
+    try {
+      if (resourceName !== 'folder') {
+        let can_user_access_resource = false;
+        const returnAccessSub = (result: any) => {
+          let access = false;
+          result?.subscribedUsersIds?.map((eachSub: { userId: string }) => {
+            if (eachSub.userId.toString() === userId.toString()) {
+              access = true;
+            }
+          });
+          return access;
+        };
+        const returnAccessPurchase = (result: any) => {
+          let access = false;
+          result?.paidUsersIds?.map((eachPurchase: { userId: string }) => {
+            if (eachPurchase.userId.toString() === userId.toString()) {
+              access = true;
+            }
+          });
+          return access;
+        };
+
+        if (resourceName === 'flashcard') {
+          let result = await this.flashcard.findOne({ _id: resourceId });
+          if (!result?.isSubscription && !result?.isPurchase) {
+            can_user_access_resource = true;
+          } else if (result?.isSubscription) {
+            can_user_access_resource = returnAccessSub(result);
+          } else if (result?.isPurchase) {
+            can_user_access_resource = returnAccessPurchase(result);
+          }
+        }
+        if (resourceName === 'mcq') {
+          let result = await this.mcq.findOne({ _id: resourceId });
+          if (!result?.isSubscription && !result?.isPurchase) {
+            can_user_access_resource = true;
+          } else if (result?.isSubscription) {
+            can_user_access_resource = returnAccessSub(result);
+          } else if (result?.isPurchase) {
+            can_user_access_resource = returnAccessPurchase(result);
+          }
+        }
+        if (resourceName === 'video') {
+          let result = await this.video.findOne({ _id: resourceId });
+          if (!result?.isSubscription && !result?.isPurchase) {
+            can_user_access_resource = true;
+          } else if (result?.isSubscription) {
+            can_user_access_resource = returnAccessSub(result);
+          } else if (result?.isPurchase) {
+            can_user_access_resource = returnAccessPurchase(result);
+          }
+        }
+        if (resourceName === 'audio') {
+          let result = await this.audio.findOne({ _id: resourceId });
+          if (!result?.isSubscription && !result?.isPurchase) {
+            can_user_access_resource = true;
+          } else if (result?.isSubscription) {
+            can_user_access_resource = returnAccessSub(result);
+          } else if (result?.isPurchase) {
+            can_user_access_resource = returnAccessPurchase(result);
+          }
+        }
+        if (resourceName === 'essay') {
+          let result = await this.essay.findOne({ _id: resourceId });
+          if (!result?.isSubscription && !result?.isPurchase) {
+            can_user_access_resource = true;
+          } else if (result?.isSubscription) {
+            can_user_access_resource = returnAccessSub(result);
+          } else if (result?.isPurchase) {
+            can_user_access_resource = returnAccessPurchase(result);
+          }
+        }
+        if (resourceName === 'pdf') {
+          let result = await this.pdf.findOne({ _id: resourceId });
+          if (!result?.isSubscription && !result?.isPurchase) {
+            can_user_access_resource = true;
+          } else if (result?.isSubscription) {
+            can_user_access_resource = returnAccessSub(result);
+          } else if (result?.isPurchase) {
+            can_user_access_resource = returnAccessPurchase(result);
+          }
+        }
+        if (!can_user_access_resource) {
+          return res.status(200).json({
+            msg: `permission denied`,
+            payload: false,
+          });
+        } else {
+          return res.status(200).json({ msg: 'success', payload: true });
+        }
+      } else {
+        return res
+          .status(400)
+          .json({ msg: "Bad request. File name cannot be 'folder'" });
+      }
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
   async addParentIdsToResource({
     resourceName,
     resourceId,

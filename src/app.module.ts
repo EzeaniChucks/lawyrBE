@@ -11,10 +11,9 @@ import { McqsModule } from './mcqs/mcqs.module';
 import { VideosModule } from './videos/videos.module';
 import { AudiosModule } from './audios/audios.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
-import { MulterModule } from '@nestjs/platform-express';
-import {diskStorage} from 'multer'
 import { AdminModule } from './admin/admin.module';
 import { ContentsModule } from './contents/contents.module';
+import { ChatsModule } from './chats/chats.module';
 // import {CloudinaryStorage} from 'multer-storage-cloudinary'
 // MulterModule.registerAsync({
 //   useFactory: () => ({
@@ -38,6 +37,7 @@ import { ContentsModule } from './contents/contents.module';
     McqsModule,
     VideosModule,
     AudiosModule,
+    ChatsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -40,21 +40,24 @@ export const mcqSchema = new mongoose.Schema(
       default: 'months',
       enum: ['days', 'weeks', 'months', 'years'],
     },
-    subscribedUsersIds: { type: Array, default: [] },
-    paidUsersIds: { type: Array, default: [] },
+    subscribedUsersIds: {
+      type: [{ userId: String, userName: String }],
+      default: [],
+    },
+    paidUsersIds: { type: [{ userId: String, userName: String }], default: [] },
   },
   { timestamps: true },
 );
-export const groupTestSchema = new mongoose.Schema(
-  {
-    creatorId: { type: mongoose.SchemaTypes.ObjectId, required: true },
-    invitees: [{ id: mongoose.SchemaTypes.ObjectId, isQualified:{type:Boolean, default:false}}],
-    submitedTests:[],
-    testHasStarted:{type: Boolean, default:false},
-    testEnded:{type: Boolean, default:false},
-  },
-  { timestamps: true },
-);
+// export const groupTestSchema = new mongoose.Schema(
+//   {
+//     creatorId: { type: mongoose.SchemaTypes.ObjectId, required: true },
+//     invitees: [{ id: mongoose.SchemaTypes.ObjectId, isQualified:{type:Boolean, default:false}}],
+//     submitedTests:[],
+//     testHasStarted:{type: Boolean, default:false},
+//     testEnded:{type: Boolean, default:false},
+//   },
+//   { timestamps: true },
+// );
 
 //invite user
 //when user pays, change their isReady status to ready

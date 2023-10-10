@@ -79,6 +79,24 @@ export class ContentsController {
       res,
     );
   }
+  @Post('can_user_access_resource')
+  async canUserAccessResource(
+    @Body()
+    body: {
+      resourceId: string | undefined;
+      resourceName: string;
+      userId: string;
+    },
+    @Res() res: Response,
+  ) {
+    const { resourceId, resourceName, userId } = body;
+    return this.contentservice.canUserAccessResource(
+      resourceId,
+      resourceName,
+      userId,
+      res,
+    );
+  }
   @Put('add_parent_ids_to_resource')
   async addParentIdsToResource(
     @Body()

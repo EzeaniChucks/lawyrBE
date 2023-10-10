@@ -19,7 +19,9 @@ import {
 export class McqsService {
   constructor(
     @InjectModel('mcqs') private readonly mcqs: Model<any>,
+    @InjectModel('grouptests') private readonly grouptests: Model<any>,
     @InjectModel('contents') private readonly contents: Model<any>,
+    @InjectModel('auth') private readonly auth: Model<any>,
   ) {}
   async createMCQ(
     details: cardDetailsDTO,
@@ -120,4 +122,196 @@ export class McqsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-}
+  async createAGroupTest(testObj: any, res: Response) {
+    try {
+      const ongoingTest = await this.grouptests.findOne({
+        creatorId: testObj?.creatorId,
+        groupTestStatus: 'ongoing',
+      });
+      if (ongoingTest) {
+        return res
+          .status(200)
+          .json({ msg: 'open test still exists', payload: ongoingTest });
+      }
+      const grouptest = await this.grouptests.create(testObj);
+      if (!grouptest) {
+        return res.status(400).json({ msg: 'Somthing went wrong' });
+      }
+      return res.status(200).json({ msg: 'success', payload: grouptest });
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
+  async fetchAGroupTest(grouptestId: mcqIdDTO, userId: string, res: Response) {
+    try {
+      const ongoingTest = await this?.grouptests?.findOne({
+        _id: grouptestId,
+      });
+      let userCanFetchTest = false;
+      ongoingTest?.initialTestParticipants?.map(
+        (each: { userId: string; canTakeTest: boolean }) => {
+          if (each?.userId?.toString() === userId) {
+            userCanFetchTest = true;
+          }
+          return;
+        },
+      );
+      if (!userCanFetchTest) {
+        return res
+          ?.status(400)
+          ?.json({ msg: 'You have not been invited to this test yet' });
+      }
+      return res?.status(200)?.json({ msg: 'success', payload: ongoingTest });
+    } catch (err) {
+      return res?.status(500)?.json({ msg: err?.message });
+    }
+  }
+  async updateGroupTest(groupTestId: mcqIdDTO, payload: any, res: Response) {
+    try {
+      const updatedTest = await this.grouptests.findOneAndDelete(
+        { _id: groupTestId },
+        { new: true },
+      );
+      if (!updatedTest) {
+        return res.status(400).json({ msg: 'Something went wrong' });
+      }
+      return res.status(200).json({ ms: 'success', payload: updatedTest });
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
+  async deleteAGroupTest(groupTestId: mcqIdDTO, userId: string, res: Response) {
+    try {
+      const group = await this.grouptests.findOne({
+        _id: groupTestId,
+        creatorId: userId,
+      });
+
+      if (!group) {
+        return res
+          .status(400)
+          .json({ msg: 'You are not authorized to perform this action' });
+      }
+      const updatedTest = await this.grouptests.findOneAndDelete(
+        { _id: groupTestId },
+        { new: true },
+      );
+      if (!updatedTest) {
+        return res.status(400).json({ msg: 'Somthing went wrong' });
+      }
+      return res.status(200).json({ msg: 'success', payload: 'deleted' });
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
+  async searchUsersToInviteToGroupTest(searchWord: string, res: Response) {
+    try {
+      if (searchWord) {
+        const users = await this.auth
+          .find({
+            isAdmin: false,
+            $or: [
+              { firstName: { $regex: searchWord, $options: 'xi' } },
+              { lastName: { $regex: searchWord, $options: 'xi' } },
+            ],
+          })
+          .select('firstName lastName _id');
+        return res.status(200).json({ msg: 'success', payload: users });
+      } else {
+        return res.status(200).json({ msg: 'success', payload: [] });
+      }
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
+  async inviteFriendsToGroupTest(
+    inviteesIdArrays: { userId: string; userName: string }[],
+    originalmcqId: string,
+    grouptestId: string,
+    res: Response,
+  ) {
+    try {
+      const updatedFriendsArray = [];
+      let mcq = await this.mcqs.findOne({ _id: originalmcqId });
+
+      //blocking code
+      if (mcq?.isSubscription) {
+        for (let eachId of inviteesIdArrays) {
+          mcq?.subscribedUsersIds.map((subUsers: { userId: string }) => {
+            if (subUsers?.userId.toString() === eachId?.userId) {
+              updatedFriendsArray.push({
+                userId: eachId?.userId,
+                canTakeTest: true,
+                userName: eachId?.userName,
+              });
+            } else {
+              updatedFriendsArray.push({
+                userId: eachId?.userId,
+                canTakeTest: false,
+                userName: eachId?.userName,
+              });
+            }
+            return;
+          });
+        }
+      } else if (mcq?.isPurchase) {
+        for (let eachId of inviteesIdArrays) {
+          mcq?.paidUsersIds.map((paidUsers: { userId: string }) => {
+            if (paidUsers?.userId.toString() === eachId?.userId) {
+              updatedFriendsArray.push({
+                userId: eachId?.userId,
+                canTakeTest: true,
+                userName: eachId?.userName,
+              });
+            } else {
+              updatedFriendsArray.push({
+                userId: eachId?.userId,
+                canTakeTest: false,
+                userName: eachId?.userName,
+              });
+            }
+            return;
+          });
+        }
+      } else {
+        inviteesIdArrays?.map((eachfriend) => {
+          updatedFriendsArray.push({
+            userId: eachfriend.userId,
+            canTakeTest: true,
+            userName: eachfriend.userName,
+          });
+          return;
+        });
+      }
+      //end of blocking code
+
+      const groupTest = await this.grouptests.findOne({ _id: grouptestId });
+
+      //blocking code
+      let newArr = [...groupTest?.initialTestParticipants];
+      updatedFriendsArray.map((eachfriend: { userId: string }) => {
+        let itemexist = false;
+        groupTest?.initialTestParticipants.map(
+          (eachPart: { userId: string }) => {
+            if (eachfriend.userId.toString() === eachPart?.userId.toString()) {
+              itemexist = true;
+            }
+          },
+        );
+        if (!itemexist) {
+          newArr.push(eachfriend);
+        }
+      });
+      //end of blocking code
+
+      const groupTestupdate = await this.grouptests.findOneAndUpdate(
+        { _id: grouptestId },
+        { $set: { initialTestParticipants: newArr } },
+        { new: true },
+      );
+      return res.status(200).json({ msg: 'success', payload: groupTestupdate });
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
+};

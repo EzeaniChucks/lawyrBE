@@ -1,26 +1,34 @@
 import * as mongoose from 'mongoose';
 
-export const authSchema = new mongoose.Schema(
+export const groupTestSchema = new mongoose.Schema(
   {
-    firstName: String,
-    lastName: String,
-    phoneNumber: String,
-    password: { type: String, require: true },
-    email: { type: String, require: true, unique: true },
-    isAdmin: { type: Boolean, default: false },
-    isSubAdmin: { type: Boolean, default: false },
-    assets: { subscriptions: [], purchases: [], cart: [] },
-    mcqs: [
+    creatorId: { type: mongoose.SchemaTypes.ObjectId, required: true },
+    details: { title: { type: String }, description: { type: String } },
+    testParticipantsIds: [
+      {
+        userId: { type: mongoose.SchemaTypes.ObjectId, required: true },
+        userName: { type: String, required: true },
+      },
+    ],
+    initialTestParticipants: [
+      {
+        userId: { type: mongoose.SchemaTypes.ObjectId, required: true },
+        canTakeTest: { type: Boolean, default: false },
+        userName: { type: String, required: true },
+      },
+    ],
+    submittedTests: [
       {
         creatorId: { type: mongoose.SchemaTypes.ObjectId, required: true },
         clonedresourceId: {
           type: mongoose.SchemaTypes.ObjectId,
           required: true,
         },
-        mcqDetails: {
-          title: { type: String, required: true },
-          description: { type: String, required: true },
+        testTakerId: {
+          type: mongoose.SchemaTypes.ObjectId,
+          required: true,
         },
+        testTakerName: { type: String, required: true },
         scenarios: [
           {
             text: String,
@@ -55,7 +63,13 @@ export const authSchema = new mongoose.Schema(
         totalWrongQuestions: { type: Number, default: 0 },
       },
     ],
-    userStatus: { type: String, default: 'active', enum: ['active', 'banned'] },
+    testStartTimeMilliseconds: { type: Number, default: 0, required: true },
+    testStartTimeString: { type: Date },
+    groupTestStatus: {
+      type: String,
+      default: 'ongoing',
+      enum: ['ongoing', 'completed'],
+    },
   },
   { timestamps: true },
 );

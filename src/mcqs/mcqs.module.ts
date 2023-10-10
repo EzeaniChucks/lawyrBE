@@ -4,11 +4,17 @@ import { McqsService } from './mcqs.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { mcqSchema } from './mcq.model';
 import { contentsSchema } from 'src/contents/contents.model';
+import { groupTestSchema } from 'src/grouptests/grouptests.model';
+import { authSchema } from 'src/auth/auth.model';
 
 @Module({
   imports: [
+    MongooseModule.forFeature([{ name: 'auth', schema: authSchema }]),
     MongooseModule.forFeature([{ name: 'mcqs', schema: mcqSchema }]),
     MongooseModule.forFeature([{ name: 'contents', schema: contentsSchema }]),
+    MongooseModule.forFeature([
+      { name: 'grouptests', schema: groupTestSchema },
+    ]),
   ],
   controllers: [McqsController],
   providers: [McqsService],
