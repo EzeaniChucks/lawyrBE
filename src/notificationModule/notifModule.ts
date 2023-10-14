@@ -16,5 +16,6 @@ import { groupTestSchema } from 'src/grouptests/grouptests.model';
   ],
   controllers: [NotifController],
   providers: [NotifService],
+  exports: [NotifService],
 })
 export class NotifModule {}

@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 
-export const notificationSchema = new mongoose.Schema(
+export const invitationSchema = new mongoose.Schema(
   {
     recipientId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -11,7 +11,6 @@ export const notificationSchema = new mongoose.Schema(
     has_checked: { type: Boolean, default: false },
     message: { type: String },
     link: { type: String, required: true },
-    reason: { type: String },
   },
   { timestamps: true },
 );

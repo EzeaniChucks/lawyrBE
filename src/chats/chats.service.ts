@@ -4,24 +4,28 @@ import { Model } from 'mongoose';
 
 @Injectable()
 export class ChatsService {
-  constructor(@InjectModel('testchats') private testchats: Model<any>) {}
+  constructor(
+    @InjectModel('testchats') private readonly testchats: Model<any>,
+    @InjectModel('grouptests') private readonly grouptests: Model<any>,
+    @InjectModel('auths') private readonly auth: Model<any>,
+  ) {}
   // messages: any[] = [{ name: 'Bot', text: 'Welcome to this chatroom' }];
   clientToUser = {};
 
   async create(createMessageDto: any) {
     const message = { ...createMessageDto };
-    const { eventId, userId, name, text } = createMessageDto;
+    const { grouptestId, userId, name, text } = createMessageDto;
     // this.messages.push(createMessageDto); //todo
-    const chatExists = await this.testchats.findOne({ eventId });
-    if (chatExists.chats.length === 1 && chatExists.chats[0].name === 'Bot') {
+    const chatExists = await this.testchats.findOne({ grouptestId });
+    if (chatExists?.chats?.length === 1 && chatExists.chats[0].name === 'Bot') {
       await this.testchats.findOneAndUpdate(
-        { eventId },
+        { grouptestId },
         { $set: { chats: { userId, name, text } } },
         { new: true },
       );
     } else {
       await this.testchats.findOneAndUpdate(
-        { eventId },
+        { grouptestId },
         { $push: { chats: { userId, name, text } } },
         { new: true },
       );
@@ -29,13 +33,13 @@ export class ChatsService {
     return message;
   }
 
-  async findAll(eventId: string) {
-    const chatExists = await this.testchats.findOne({ eventId });
+  async findAll(grouptestId: string) {
+    const chatExists = await this.testchats.findOne({ grouptestId });
     if (chatExists) {
-      return chatExists.chats;
+      return chatExists?.chats;
     } else {
       let chatObject = await this.testchats.create({
-        eventId,
+        grouptestId,
         chats: [
           {
             name: 'Bot',
@@ -89,7 +93,7 @@ export class ChatsService {
         }
       }
       return {
-        eventId: roomId,
+        grouptestId: roomId,
         newUsers: this.clientToUser[roomId]
           ? Object.values(this.clientToUser[roomId])
           : [],
@@ -97,7 +101,53 @@ export class ChatsService {
     }
     return this.clientToUser[clientId];
   }
+  async startGroupTest(grouptestId: string, creatorId: string) {
+    try {
+      let qualifiedTestTakersIds: { userId: string; userName: string }[] = [];
 
+      let grouptest = await this.grouptests.findOne({ _id: grouptestId });
+      if (!grouptest) {
+        return {
+          msg: 'This group test does not exist. It may have been deleted',
+        };
+      }
+
+      if (grouptest.creatorId.toString() !== creatorId.toString()) {
+        return { msg: 'You cannot perform this action' };
+      }
+
+      grouptest?.initialTestParticipants.map(
+        // use this to get an array of only qualified ids
+        (each: { userId: string; canTakeTest: boolean; userName: string }) => {
+          if (each?.canTakeTest)
+            qualifiedTestTakersIds.push({
+              userId: each?.userId,
+              userName: each?.userName,
+            });
+        },
+      );
+
+      //compute a date string from the grouptest's minute variable, to expire in the future
+      let newDateString = new Date(
+        Date.now() + grouptest.testStartTimeMilliseconds * 60 * 1000,
+      );
+      
+      let result = await this.grouptests.findOneAndUpdate(
+        { _id: grouptest, creatorId },
+        {
+          $set: {
+            testParticipantsIds: qualifiedTestTakersIds,
+            groupTestStatus: 'ongoing',
+            testStartTimeString: newDateString,
+          },
+        },
+        { new: true },
+      );
+      return result;
+    } catch (err) {
+      return { msg: err.message };
+    }
+  }
   // findOne(id: number) {
   //   return `This action returns a #${id} message`;
   // }

@@ -14,6 +14,8 @@ import {
   mcqDetailsDTO,
   mcqIdDTO,
 } from './mcqs.dto';
+import { NotifService } from 'src/notificationModule/notifService';
+import { InvitationService } from 'src/invitationModule/invitationService';
 
 @Injectable()
 export class McqsService {
@@ -22,6 +24,8 @@ export class McqsService {
     @InjectModel('grouptests') private readonly grouptests: Model<any>,
     @InjectModel('contents') private readonly contents: Model<any>,
     @InjectModel('auth') private readonly auth: Model<any>,
+    private readonly notifService: NotifService,
+    private readonly invitationService: InvitationService,
   ) {}
   async createMCQ(
     details: cardDetailsDTO,
@@ -126,7 +130,7 @@ export class McqsService {
     try {
       const ongoingTest = await this.grouptests.findOne({
         creatorId: testObj?.creatorId,
-        groupTestStatus: 'ongoing',
+        groupTestStatus: 'pending',
       });
       if (ongoingTest) {
         return res
@@ -228,6 +232,8 @@ export class McqsService {
     inviteesIdArrays: { userId: string; userName: string }[],
     originalmcqId: string,
     grouptestId: string,
+    folderId: string,
+    folderName: string,
     res: Response,
   ) {
     try {
@@ -237,41 +243,45 @@ export class McqsService {
       //blocking code
       if (mcq?.isSubscription) {
         for (let eachId of inviteesIdArrays) {
-          mcq?.subscribedUsersIds.map((subUsers: { userId: string }) => {
-            if (subUsers?.userId.toString() === eachId?.userId) {
-              updatedFriendsArray.push({
-                userId: eachId?.userId,
-                canTakeTest: true,
-                userName: eachId?.userName,
-              });
-            } else {
-              updatedFriendsArray.push({
-                userId: eachId?.userId,
-                canTakeTest: false,
-                userName: eachId?.userName,
-              });
-            }
-            return;
-          });
+          let found = mcq?.subscribedUsersIds.find(
+            (subUsers: { userId: string }) => {
+              return subUsers?.userId.toString() === eachId?.userId;
+            },
+          );
+          if (found) {
+            updatedFriendsArray.push({
+              userId: eachId?.userId,
+              canTakeTest: true,
+              userName: eachId?.userName,
+            });
+          } else {
+            updatedFriendsArray.push({
+              userId: eachId?.userId,
+              canTakeTest: false,
+              userName: eachId?.userName,
+            });
+          }
         }
       } else if (mcq?.isPurchase) {
         for (let eachId of inviteesIdArrays) {
-          mcq?.paidUsersIds.map((paidUsers: { userId: string }) => {
-            if (paidUsers?.userId.toString() === eachId?.userId) {
-              updatedFriendsArray.push({
-                userId: eachId?.userId,
-                canTakeTest: true,
-                userName: eachId?.userName,
-              });
-            } else {
-              updatedFriendsArray.push({
-                userId: eachId?.userId,
-                canTakeTest: false,
-                userName: eachId?.userName,
-              });
-            }
-            return;
-          });
+          const found = mcq?.paidUsersIds.find(
+            (paidUsers: { userId: string }) => {
+              return paidUsers?.userId.toString() === eachId?.userId;
+            },
+          );
+          if (found) {
+            updatedFriendsArray.push({
+              userId: eachId?.userId,
+              canTakeTest: true,
+              userName: eachId?.userName,
+            });
+          } else {
+            updatedFriendsArray.push({
+              userId: eachId?.userId,
+              canTakeTest: false,
+              userName: eachId?.userName,
+            });
+          }
         }
       } else {
         inviteesIdArrays?.map((eachfriend) => {
@@ -287,7 +297,8 @@ export class McqsService {
 
       const groupTest = await this.grouptests.findOne({ _id: grouptestId });
 
-      //blocking code
+      //blocking code, checks if a user from UpdateFriendsArray is already in the initialTestParticiapnts list
+      //just to avoid adding participants from the frontend that already on the database particiapants list
       let newArr = [...groupTest?.initialTestParticipants];
       updatedFriendsArray.map((eachfriend: { userId: string }) => {
         let itemexist = false;
@@ -301,14 +312,28 @@ export class McqsService {
         if (!itemexist) {
           newArr.push(eachfriend);
         }
+        return;
       });
       //end of blocking code
+
+      const logInviteArr = JSON.parse(JSON.stringify(newArr));
+      await this.invitationService.loginvitations(
+        'You have been invited to a group test',
+        `/user/${folderName}/${folderId}/mcq/${originalmcqId}/grouptest/${grouptestId}`,
+        [
+          ...logInviteArr?.splice(
+            groupTest?.initialTestParticipants.length,
+            newArr?.length,
+          ),
+        ],
+      );
 
       const groupTestupdate = await this.grouptests.findOneAndUpdate(
         { _id: grouptestId },
         { $set: { initialTestParticipants: newArr } },
         { new: true },
       );
+
       return res.status(200).json({ msg: 'success', payload: groupTestupdate });
     } catch (err) {
       return res.status(500).json({ msg: err.message });

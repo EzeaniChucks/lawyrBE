@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 export const chatSchema = new mongoose.Schema({
-  eventId: mongoose.Schema.Types.ObjectId,
+  grouptestId: mongoose.Schema.Types.ObjectId,
   chats: [
     {
       userId: mongoose.Schema.Types.ObjectId,

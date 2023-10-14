@@ -14,6 +14,8 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { AdminModule } from './admin/admin.module';
 import { ContentsModule } from './contents/contents.module';
 import { ChatsModule } from './chats/chats.module';
+import { NotifModule } from './notificationModule/notifModule';
+import { InvitationModule } from './invitationModule/invitationModule';
 // import {CloudinaryStorage} from 'multer-storage-cloudinary'
 // MulterModule.registerAsync({
 //   useFactory: () => ({
@@ -38,6 +40,8 @@ import { ChatsModule } from './chats/chats.module';
     VideosModule,
     AudiosModule,
     ChatsModule,
+    NotifModule,
+    InvitationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

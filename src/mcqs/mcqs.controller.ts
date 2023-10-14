@@ -106,14 +106,24 @@ export class McqsController {
       inviteesIdArrays: { userId: string; userName: string }[];
       originalmcqId: string;
       grouptestId: string;
+      folderId: string;
+      folderName: string;
     },
     @Res() res: Response,
   ) {
-    const { inviteesIdArrays, originalmcqId, grouptestId } = body;
+    const {
+      inviteesIdArrays,
+      originalmcqId,
+      grouptestId,
+      folderId,
+      folderName,
+    } = body;
     return await this.mcqservice.inviteFriendsToGroupTest(
       inviteesIdArrays,
       originalmcqId,
       grouptestId,
+      folderId,
+      folderName,
       res,
     );
   }

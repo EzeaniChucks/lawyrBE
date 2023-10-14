@@ -67,8 +67,8 @@ export const groupTestSchema = new mongoose.Schema(
     testStartTimeString: { type: Date },
     groupTestStatus: {
       type: String,
-      default: 'ongoing',
-      enum: ['ongoing', 'completed'],
+      default: 'pending',
+      enum: ['pending','ongoing', 'completed'],
     },
   },
   { timestamps: true },

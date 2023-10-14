@@ -8,87 +8,83 @@ import { Response } from 'express';
 import { Model } from 'mongoose';
 
 @Injectable()
-export class NotifService {
+export class InvitationService {
   constructor(
-    @InjectModel('notifications') private notifications: Model<any>,
+    @InjectModel('invitations') private invitations: Model<any>,
     @InjectModel('grouptests') private grouptests: Model<any>,
   ) {}
 
   //Helper Method
-  async buildGroupNotificationArray({
+  async buildGroupinvitationArray({
     memberArray,
     message,
     link,
     // userId,
-    reason,
   }) {
     return memberArray.reduce((total: [any], item: any) => {
-      // if (item?.toString() === userId) return total; //prevents sending notif to notif logger
+      // if (item?.toString() === userId) return total; //prevents sending invite to invite logger
       const data = {
         recipientId: item?.userId,
         message,
         link,
-        reason,
       };
       total.push(data);
       return total;
     }, []);
   }
 
-  async logNotifications(
+  async loginvitations(
     message: string,
     // userId: string,
     link: string,
-    reason: string,
     recipientsArray: { userId: string }[],
     // res: Response,
   ) {
     try {
       //blocking code below
-      const array = await this.buildGroupNotificationArray({
+      const array = await this.buildGroupinvitationArray({
         memberArray: recipientsArray,
         message,
         link,
         // userId,
-        reason,
       });
       //end of blocking code
-      const notifs = await this.notifications.create(array);
-      if (!notifs) {
+      const invites = await this.invitations.create(array);
+      if (!invites) {
         throw new BadRequestException({
-          msg: 'Something went wrong logging notification',
+          msg: 'Something went wrong logging invitation',
         });
       }
-      return { msg: 'success', payload: 'Notification logged' };
+      return { msg: 'success', payload: 'invitation logged' };
     } catch (err) {
       return { msg: err?.message };
     }
   }
-  async getNotifications(userId: string) {
+  async getinvitations(userId: string) {
     try {
-      const notifs = await this.notifications.find({ recipientId: userId });
-      if (!notifs) {
+      const invites = await this.invitations.find({ recipientId: userId });
+      if (!invites) {
         throw new BadRequestException({ msg: 'Something went wrong' });
       }
-      return { msg: 'success', payload: notifs };
+      return { msg: 'success', payload: invites };
     } catch (err) {
       throw new InternalServerErrorException({ msg: err.message });
     }
   }
   async markAsChecked(messageId: string, userId: string) {
     try {
-      const notif = await this.notifications.findOne({
+      const invite = await this.invitations.findOne({
         _id: messageId,
         recipientId: userId,
       });
-      if (!notif) {
+      if (!invite) {
         throw new BadRequestException({ msg: 'Something went wrong' });
       }
-      notif.has_checked = true;
-      await notif.save();
+      invite.has_checked = true;
+      await invite.save();
 
-      const notifs = await this.notifications.find({ recipientId: userId });
-      return { msg: 'success', payload: notifs };
+      const invites = await this.invitations.find({ recipientId: userId });
+      return { msg: 'success', payload: invites };
     } catch (err) {
       throw new InternalServerErrorException({ msg: err.message });
     }
