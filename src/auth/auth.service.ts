@@ -156,6 +156,19 @@ export class AuthService {
     try {
       //check if test already exist and is ongoing.
       //if ongoing, reject addition. Don't forget.
+      const aTestIsAlreadyOngoing = await this.user.findOne({
+        _id: userId,
+        mcqs: { $elemMatch: { status: 'ongoing' } },
+      });
+      if (aTestIsAlreadyOngoing) {
+        const singleTest = aTestIsAlreadyOngoing?.mcqs?.find(
+          (test: any) => test?.status === 'ongoing',
+        ); //returns the newly added mcq obj, which is last on the array
+        return res.status(200).json({
+          msg: 'You already have an ongoing test',
+          payload: singleTest._id,
+        });
+      }
       const result = await this.user.findOneAndUpdate(
         { _id: userId },
         { $push: { mcqs: mcq } },
@@ -166,7 +179,7 @@ export class AuthService {
       }
       const newresult = result.mcqs.slice(-1)[0]; //returns the newly added mcq obj, which is last on the array
       return res.status(200).json({
-        msg: 'Success',
+        msg: 'success',
         payload: newresult?._id,
       });
     } catch (err) {
@@ -309,6 +322,195 @@ export class AuthService {
           .json({ msg: 'Bad request. Something went off.' });
       }
       const currentMCQofUpdatedUser = finaluser?.mcqs?.find(
+        (each: MCQuestionsDTO) => each?._id.toString() === mcqId,
+      );
+      return res
+        .status(200)
+        .json({ msg: 'success', payload: currentMCQofUpdatedUser });
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
+
+  //For Group MCQS
+  async startGroupMCQTest(
+    userId: string,
+    mcq: {
+      grouptestId: string;
+      creatorId: string;
+      clonedresourceId: string;
+      mcqDetails: mcqDetailsDTO;
+      QAs: MCQuestionsDTO[];
+      scenarios: MCQScenarios[];
+      expiryDate: Date;
+    },
+    res: Response,
+  ) {
+    try {
+      //check if test already exist and is ongoing.
+      //if ongoing, reject addition. Don't forget.
+      const aTestIsAlreadyOngoing = await this.user.findOne({
+        _id: userId,
+        groupMcqs: { $elemMatch: { grouptestId: mcq?.grouptestId } },
+      });
+      if (aTestIsAlreadyOngoing) {
+        const singleTest = aTestIsAlreadyOngoing?.groupMcqs?.find(
+          (test: any) =>
+            test?.grouptestId.toString() === mcq?.grouptestId.toString(),
+        ); //returns the newly added groupMcq obj, which is last in the array
+        return res.status(200).json({
+          msg: 'group test already written',
+          payload: singleTest?._id,
+        });
+      }
+      const result = await this.user.findOneAndUpdate(
+        { _id: userId },
+        { $push: { groupMcqs: mcq } },
+        { new: true },
+      );
+      if (!result) {
+        return res.status(400).json({ msg: 'Something went wrong' });
+      }
+      const newresult = result.groupMcqs.slice(-1)[0]; //returns the newly added mcq obj, which is last on the array
+      return res.status(200).json({
+        msg: 'success',
+        payload: newresult?._id,
+      });
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
+  async fetchCurrentOngoingGroupMCQ(userId: string, mcqId: string, res: Response) {
+    try {
+      const userobj = await this.user.findOne({ _id: userId });
+      const currentMCQ = userobj.groupMcqs.find(
+        (each: any) => each._id.toString() === mcqId,
+      );
+      if (!userobj || !currentMCQ) {
+        return res
+          .status(400)
+          .json({ msg: 'Bad request. Something went wrong.' });
+      }
+      return res.status(200).json({ msg: 'success', payload: currentMCQ });
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
+  async fetchAllCompletedGroupMCQs(userId: string, res: Response) {
+    try {
+      const userobj = await this.user.findOne({ _id: userId });
+      const allMCQs = userobj.groupMcqs.map((each: any) => {
+        return { mcqDetails: each.mcqDetails, _id: each._id };
+      });
+      if (!userobj || !allMCQs) {
+        return res
+          .status(400)
+          .json({ msg: 'Bad request. Something went wrong.' });
+      }
+      return res.status(200).json({ msg: 'success', payload: allMCQs });
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
+  async editOngoingGroupMCQ(
+    userId: string,
+    QAs: MCQuestionsDTO[],
+    mcqId: string,
+    res: Response,
+  ) {
+    try {
+      const checkuser = await this.user.findOne({ _id: userId });
+      const isDateExpired = checkuser?.groupMcqs?.find((eachQa: MCQuestionsDTO) => {
+        return eachQa?._id.toString() === mcqId;
+      });
+      if (!isDateExpired) {
+        return res
+          .status(400)
+          .json({ msg: 'Bad request. Could not determine date expiration.' });
+      }
+      if (isDateExpired?.expiryDate <= new Date()) {
+        return res.status(400).json({
+          msg: 'You cannot pick answers on an expired Test. Try taking a new test',
+        });
+      }
+      const userobj = await this?.user?.findOneAndUpdate(
+        { _id: userId, 'groupMcqs._id': mcqId },
+        { $set: { 'groupMcqs.$.QAs': QAs } },
+        { new: true },
+      );
+
+      //blocking code below. Will put it in a child process later
+      const currentMCQ = userobj?.groupMcqs?.find(
+        (each: MCQuestionsDTO) => each?._id.toString() === mcqId,
+      );
+      //end of blocking code.
+
+      if (!userobj || !currentMCQ) {
+        return res.status(400).json({
+          msg: 'Bad request. Something went wrong. Please try again.',
+        });
+      }
+
+      return res.status(200).json({ msg: 'success', payload: currentMCQ });
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
+  async endOngoingGroupMCQ(
+    userId: string,
+    QAs: MCQuestionsDTO[],
+    mcqId: string,
+    res: Response,
+  ) {
+    try {
+      const userobj = await this.user.findOneAndUpdate(
+        { _id: userId, 'groupMcqs._id': mcqId },
+        { $set: { 'groupMcqs.$.QAs': QAs } },
+        { new: true },
+      );
+      const currentMCQ = userobj?.groupMcqs?.find(
+        (each: MCQuestionsDTO) => each?._id.toString() === mcqId,
+      );
+      let totalAnsweredQuestions = 0;
+      let totalRightQuestions = 0;
+      let totalWrongQuestions = 0;
+      //blocking code below. Will move them into a child process soon
+      currentMCQ?.QAs?.map((eachQa: MCQuestionsDTO) => {
+        if (eachQa?.candidate_answer === eachQa?.answer) {
+          totalRightQuestions++;
+        }
+        if (
+          eachQa?.candidate_answer !== '' &&
+          eachQa.candidate_answer !== eachQa?.answer
+        ) {
+          totalWrongQuestions++;
+        }
+        if (eachQa?.candidate_answer !== '') {
+          totalAnsweredQuestions++;
+        }
+      });
+      //end of blocking code;
+
+      const finaluser = await this.user.findOneAndUpdate(
+        { _id: userId, 'groupMcqs._id': mcqId },
+        {
+          $set: {
+            'groupMcqs.$.totalAnsweredQuestions': totalAnsweredQuestions,
+            'groupMcqs.$.totalRightQuestions': totalRightQuestions,
+            'groupMcqs.$.totalWrongQuestions': totalWrongQuestions,
+            'groupMcqs.$.expiryDate': new Date(),
+            'groupMcqs.$.status': 'completed',
+          },
+        },
+        { new: true },
+      );
+
+      if (!userobj || !currentMCQ || !finaluser) {
+        return res
+          .status(400)
+          .json({ msg: 'Bad request. Something went off.' });
+      }
+      const currentMCQofUpdatedUser = finaluser?.groupMcqs?.find(
         (each: MCQuestionsDTO) => each?._id.toString() === mcqId,
       );
       return res

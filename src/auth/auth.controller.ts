@@ -66,6 +66,7 @@ export class AuthController {
     const { userId, mcq } = body;
     return this.authsevice.startMCQTest(userId, mcq, res);
   }
+
   @Get('fetch_current_ongoing_mcq/:userId/:mcqId')
   async fetchCurrentOngoingMCQ(
     @Param()
@@ -115,5 +116,77 @@ export class AuthController {
   ) {
     const { userId, mcqId, QAs } = body;
     return this.authsevice.endOngoingMCQ(userId, QAs, mcqId, res);
+  }
+
+  @Post('start_group_mcq_test')
+  async startGroupMcqTest(
+    @Body()
+    body: {
+      userId: string;
+      mcq: {
+        grouptestId: string;
+        creatorId: string;
+        clonedresourceId: string;
+        mcqDetails: mcqDetailsDTO;
+        QAs: MCQuestionsDTO[];
+        scenarios: MCQScenarios[];
+        expiryDate: Date;
+      };
+    },
+    @Res() res: Response,
+  ) {
+    const { userId, mcq } = body;
+    return this.authsevice.startGroupMCQTest(userId, mcq, res);
+  }
+
+  @Get('fetch_current_ongoing_group_mcq/:userId/:mcqId')
+  async fetchCurrentOngoingGroupMCQ(
+    @Param()
+    param: {
+      userId: string;
+      mcqId: string;
+    },
+    @Res() res: Response,
+  ) {
+    const { userId, mcqId } = param;
+    return this.authsevice.fetchCurrentOngoingGroupMCQ(userId, mcqId, res);
+  }
+  @Get('fetch_all_completed_group_mcqs/:userId')
+  async fetchAllCompletedGroupMCQs(
+    @Param()
+    param: {
+      userId: string;
+    },
+    @Res() res: Response,
+  ) {
+    const { userId } = param;
+    return this.authsevice.fetchAllCompletedGroupMCQs(userId, res);
+  }
+
+  @Put('edit_ongoing_group_mcq')
+  async editOngoingGroupMCQ(
+    @Body()
+    body: {
+      userId: string;
+      QAs: MCQuestionsDTO[];
+      mcqId: string;
+    },
+    @Res() res: Response,
+  ) {
+    const { userId, mcqId, QAs } = body;
+    return this.authsevice.editOngoingGroupMCQ(userId, QAs, mcqId, res);
+  }
+  @Put('end_ongoing_group_mcq')
+  async endOngoingGroupMCQ(
+    @Body()
+    body: {
+      userId: string;
+      QAs: MCQuestionsDTO[];
+      mcqId: string;
+    },
+    @Res() res: Response,
+  ) {
+    const { userId, mcqId, QAs } = body;
+    return this.authsevice.endOngoingGroupMCQ(userId, QAs, mcqId, res);
   }
 }

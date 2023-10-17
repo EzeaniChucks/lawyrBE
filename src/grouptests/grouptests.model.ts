@@ -17,47 +17,48 @@ export const groupTestSchema = new mongoose.Schema(
         userName: { type: String, required: true },
       },
     ],
+    clonedresourceId: {
+      type: mongoose.SchemaTypes.ObjectId,
+      required: true,
+    },
+    numberOfQuestions: { type: Number, default: 0, required: true },
+    numberOfScenarios: { type: Number, default: 0, required: true },
     submittedTests: [
       {
-        creatorId: { type: mongoose.SchemaTypes.ObjectId, required: true },
-        clonedresourceId: {
-          type: mongoose.SchemaTypes.ObjectId,
-          required: true,
-        },
         testTakerId: {
           type: mongoose.SchemaTypes.ObjectId,
           required: true,
         },
         testTakerName: { type: String, required: true },
-        scenarios: [
-          {
-            text: String,
-            linkedTo: [String],
-          },
-        ],
-        QAs: [
-          {
-            question: { type: String, required: true },
-            questionNum: { type: String, required: true },
-            A: { type: String, required: true },
-            B: { type: String, required: true },
-            C: { type: String, required: true },
-            D: { type: String, required: true },
-            answer: { type: String, required: true },
-            candidate_answer: {
-              type: String,
-              default: '',
-              enum: ['A', 'B', 'C', 'D', ''],
-            },
-            explanation: { type: String },
-          },
-        ],
-        expiryDate: { type: Date },
-        status: {
-          type: String,
-          default: 'ongoing',
-          enum: ['ongoing', 'completed'],
-        },
+        // scenarios: [
+        //   {
+        //     text: String,
+        //     linkedTo: [String],
+        //   },
+        // ],
+        // QAs: [
+        //   {
+        //     question: { type: String, required: true },
+        //     questionNum: { type: String, required: true },
+        //     A: { type: String, required: true },
+        //     B: { type: String, required: true },
+        //     C: { type: String, required: true },
+        //     D: { type: String, required: true },
+        //     answer: { type: String, required: true },
+        //     candidate_answer: {
+        //       type: String,
+        //       default: '',
+        //       enum: ['A', 'B', 'C', 'D', ''],
+        //     },
+        //     explanation: { type: String },
+        //   },
+        // ],
+        // expiryDate: { type: Date },
+        // status: {
+        //   type: String,
+        //   default: 'completed',
+        //   enum: ['ongoing', 'completed'],
+        // },
         totalAnsweredQuestions: { type: Number, default: 0 },
         totalRightQuestions: { type: Number, default: 0 },
         totalWrongQuestions: { type: Number, default: 0 },
@@ -68,7 +69,7 @@ export const groupTestSchema = new mongoose.Schema(
     groupTestStatus: {
       type: String,
       default: 'pending',
-      enum: ['pending','ongoing', 'completed'],
+      enum: ['pending', 'ongoing', 'completed'],
     },
   },
   { timestamps: true },

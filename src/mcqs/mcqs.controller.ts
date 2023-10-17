@@ -84,11 +84,15 @@ export class McqsController {
     return await this.mcqservice.deleteAGroupTest(grouptestId, userId, res);
   }
 
-  @Put('update_a_group_test/:groupTestId')
-  async updateGroupTest(@Body() body: any, @Res() res: Response) {
-    const { payload, groupTestId } = body;
-    return await this.mcqservice.updateGroupTest(groupTestId, payload, res);
+  @Put('end_a_group_test')
+  async endAGroupTest(
+    @Body() body: { grouptestId: mcqIdDTO },
+    @Res() res: Response,
+  ) {
+    const { grouptestId } = body;
+    return await this.mcqservice.endAGroupTest(grouptestId, res);
   }
+
   @Get('search_users_to_invite_to_group_test/:searchWord')
   async searchUsersToInviteToGroupTest(
     @Param('searchWord') searchWord: string,
@@ -126,5 +130,21 @@ export class McqsController {
       folderName,
       res,
     );
+  }
+  @Get('view_results_with_corrections/:grouptestId/:userId')
+  async viewResultsWithCorrections(
+    @Param()
+    param: {
+      grouptestId: string;
+      userId: string;
+    },
+    @Res() res: Response,
+  ) {
+    const { grouptestId, userId } = param;
+    return await this.mcqservice.viewResultsWithCorrections({
+      grouptestId,
+      userId,
+      res,
+    });
   }
 }

@@ -45,7 +45,6 @@ export class ChatsGateway implements OnGatewayDisconnect {
       payload?.grouptestId, //roomId
     );
     // console.log(usersArray);
-    // return usersArray;
     this.server.in(payload.grouptestId).emit('joined', usersArray);
   }
   @SubscribeMessage('typing')
@@ -57,26 +56,52 @@ export class ChatsGateway implements OnGatewayDisconnect {
     client.broadcast
       .to(body.grouptestId)
       .emit('typing', { name, isTyping: body.isTyping });
+  }
+
+  @SubscribeMessage('start_group_test')
+  async startGroupTest(
+    @MessageBody() body: { grouptestId: string; creatorId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { grouptestId, creatorId } = body;
+    const result = await this.chatsService.startGroupTest(
+      grouptestId,
+      creatorId,
+    );
+    this.server.in(grouptestId).emit('group_test_started', result);
+  }
+
+  @SubscribeMessage('accept_group_test_submission')
+  async acceptGroupTestSubmission(
+    @MessageBody()
+    body: {
+      grouptestId: string;
+      fullMcq: string;
+      submissionType: 'individual' | 'endOfTest';
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { grouptestId, fullMcq, submissionType } = body;
+    const result = await this.chatsService.acceptGroupTestSubmission(
+      grouptestId,
+      fullMcq,
+      submissionType,
+    );
+    if (result?.type === 'individual') {
+      client.broadcast
+        .to(grouptestId)
+        .emit('group_test_submission_accepted', result);
+    } else if (result?.type === 'all participants') {
+      this.server
+        .in(grouptestId)
+        .emit('group_test_submission_accepted', result);
+    } else if (result?.msg) {
+      client.to(client?.id).emit('group_test_submission_accepted', result);
     }
-    
-    @SubscribeMessage('start_group_test')
-    async startGroupTest(
-      @MessageBody() body: { grouptestId: string; creatorId: string },
-      @ConnectedSocket() client: Socket,
-      ) {
-        const { grouptestId, creatorId } = body;
-        const result = await this.chatsService.startGroupTest(
-          grouptestId,
-          creatorId,
-          );
-  
-          this.server.in(grouptestId).emit('group_test_started', result);
-          client.to(body.grouptestId)
-            .emit('group_test_started', result);
-        }
+  }
 
   @SubscribeMessage('disconnect')
-  async handleDisconnect(client: Socket) {
+  async handleDisconnect(@ConnectedSocket() client: Socket) {
     const userObj = this.chatsService.removeClientFromRoom(client.id);
     client.broadcast
       .to(userObj?.grouptestId)

@@ -127,21 +127,47 @@ export class McqsService {
     }
   }
   async createAGroupTest(testObj: any, res: Response) {
+    const {
+      numberOfQuestions,
+      numberOfScenarios,
+      creatorId,
+      details,
+      testParticipantsIds,
+      initialTestParticipants,
+      clonedresourceId,
+      testStartTimeMilliseconds,
+    } = testObj;
+    if (
+      !creatorId ||
+      !details ||
+      !testParticipantsIds ||
+      !initialTestParticipants ||
+      !clonedresourceId ||
+      !testStartTimeMilliseconds ||
+      numberOfQuestions === null ||
+      numberOfQuestions === undefined ||
+      numberOfScenarios === null ||
+      numberOfScenarios === undefined
+    ) {
+      return {
+        msg: 'There are one or two missing fields in your submission. 8 of them should be present. Also check our documentation to ensure they are spelled correctly',
+      };
+    }
     try {
       const ongoingTest = await this.grouptests.findOne({
         creatorId: testObj?.creatorId,
-        groupTestStatus: 'pending',
+        groupTestStatus: { $in: ['pending', 'ongoing'] },
       });
       if (ongoingTest) {
         return res
           .status(200)
-          .json({ msg: 'open test still exists', payload: ongoingTest });
+          .json({ msg: 'open test still exists', payload: ongoingTest?._id });
       }
       const grouptest = await this.grouptests.create(testObj);
       if (!grouptest) {
         return res.status(400).json({ msg: 'Somthing went wrong' });
       }
-      return res.status(200).json({ msg: 'success', payload: grouptest });
+      return res.status(200).json({ msg: 'success', payload: grouptest?._id });
     } catch (err) {
       return res.status(500).json({ msg: err?.message });
     }
@@ -170,16 +196,17 @@ export class McqsService {
       return res?.status(500)?.json({ msg: err?.message });
     }
   }
-  async updateGroupTest(groupTestId: mcqIdDTO, payload: any, res: Response) {
+  async endAGroupTest(groupTestId: mcqIdDTO, res: Response) {
     try {
-      const updatedTest = await this.grouptests.findOneAndDelete(
+      const updatedTest = await this.grouptests.findOneAndUpdate(
         { _id: groupTestId },
+        { $set: { groupTestStatus: 'completed' } },
         { new: true },
       );
       if (!updatedTest) {
         return res.status(400).json({ msg: 'Something went wrong' });
       }
-      return res.status(200).json({ ms: 'success', payload: updatedTest });
+      return res.status(200).json({ msg: 'success', payload: updatedTest });
     } catch (err) {
       return res.status(500).json({ msg: err?.message });
     }
@@ -337,6 +364,30 @@ export class McqsService {
       return res.status(200).json({ msg: 'success', payload: groupTestupdate });
     } catch (err) {
       return res.status(500).json({ msg: err.message });
+    }
+  }
+  async viewResultsWithCorrections({
+    grouptestId,
+    userId,
+    res,
+  }: {
+    grouptestId: string;
+    userId: string;
+    res: Response;
+  }) {
+    try {
+      const user = await this.auth.findOne({ _id: userId });
+      const particularMCQ = user.groupMcqs.find((eachgroupmcq: any) => {
+        return eachgroupmcq.grouptestId.toString() === grouptestId.toString();
+      });
+      if (!particularMCQ) {
+        return res.status(400).json({
+          msg: "This user's result was not found. This normally shouldn't happen. Refresh page or contact us",
+        });
+      }
+      return res.status(200).json({ msg: 'success', payload: particularMCQ });
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
     }
   }
 };

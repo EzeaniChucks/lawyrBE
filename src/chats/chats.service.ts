@@ -80,7 +80,7 @@ export class ChatsService {
   getClientName(clientId: string, roomId: string) {
     const userObj = this.clientToUser[roomId]; //check whether roomId is present. Will break break server if not checked
     const userObject = userObj ? userObj[clientId] : {};
-    return Object.keys(userObject)[0];
+    return userObject ? Object.keys(userObject)[0] : [];
   }
 
   removeClientFromRoom(clientId: string) {
@@ -101,6 +101,7 @@ export class ChatsService {
     }
     return this.clientToUser[clientId];
   }
+
   async startGroupTest(grouptestId: string, creatorId: string) {
     try {
       let qualifiedTestTakersIds: { userId: string; userName: string }[] = [];
@@ -131,7 +132,8 @@ export class ChatsService {
       let newDateString = new Date(
         Date.now() + grouptest.testStartTimeMilliseconds * 60 * 1000,
       );
-      
+
+      //update qualified test participants list and change test status to ongoing.
       let result = await this.grouptests.findOneAndUpdate(
         { _id: grouptest, creatorId },
         {
@@ -148,15 +150,75 @@ export class ChatsService {
       return { msg: err.message };
     }
   }
-  // findOne(id: number) {
-  //   return `This action returns a #${id} message`;
-  // }
+  async acceptGroupTestSubmission(
+    groupTestId: string,
+    fullMcq: any,
+    submissionType: 'individual' | 'endOfTest',
+  ) {
+    try {
+      //find grouptest and check if user submitting test is part of testakers array
+      const {
+        testTakerId,
+        testTakerName,
+        totalAnsweredQuestions,
+        totalRightQuestions,
+        totalWrongQuestions,
+      } = fullMcq;
+      // console.log(fullMcq);
+      if (
+        !testTakerId ||
+        !testTakerName ||
+        // !scenarios ||
+        // !QAs ||
+        // !expiryDate ||
+        totalAnsweredQuestions === undefined ||
+        totalAnsweredQuestions === null ||
+        totalRightQuestions === undefined ||
+        totalRightQuestions === null ||
+        totalWrongQuestions === undefined ||
+        totalWrongQuestions === null
+      ) {
+        return {
+          msg: 'There are one or two missing fields in your submission. 7 of them should be present. Also check our documentation to ensure they are spelled correctly',
+        };
+      }
+      //check if test submitter is part of test particiapnts, else reject request.
+      let groupTest = await this.grouptests.findOne({
+        _id: groupTestId,
+        testParticipantsIds: { $elemMatch: { userId: testTakerId } },
+      });
+      if (!groupTest) {
+        return { msg: 'You are not allowed to submit to this group test' };
+      }
 
-  // update(id: number, updateMessageDto: UpdateMessageDto) {
-  //   return `This action updates a #${id} message`;
-  // }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} message`;
-  // }
+      //push participant test result into grouptest
+      let result;
+      result = await this.grouptests.findOneAndUpdate(
+        { _id: groupTestId },
+        { $push: { submittedTests: fullMcq } },
+        { new: true },
+      );
+      if (submissionType === 'endOfTest') {
+        result = await this.grouptests.findOneAndUpdate(
+          { _id: groupTestId },
+          { $set: { groupTestStatus: 'completed' } },
+          { new: true },
+        );
+      }
+      //check if test ended by natural expiration for all members, or submission is individual (before general test expiration)
+      if (result && submissionType === 'individual') {
+        return {
+          payload: `${testTakerName} is done with their test`,
+          type: 'individual',
+        };
+      } else if (result && submissionType === 'endOfTest') {
+        return {
+          payload: 'All tests have now ended',
+          type: 'all participants',
+        };
+      }
+    } catch (err) {
+      return { msg: err?.message };
+    }
+  }
 }
