@@ -49,6 +49,7 @@ export const attachCookiesToResponse = async (
     lastName: string;
     phoneNumber: string;
     isAdmin: string;
+    assets: [{ subscriptions: []; purchases: []; cart: [] }];
   },
 ) => {
   const token = await createJwt(user);

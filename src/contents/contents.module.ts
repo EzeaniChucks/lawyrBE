@@ -10,9 +10,11 @@ import { docx_pdfSchema } from 'src/books/books.model';
 import { videoSchema } from 'src/videos/videos.model';
 import { essaysSchema } from 'src/essays/essays.model';
 import { flashCardSchema } from 'src/flashcard/flashCards.model';
+import { authSchema } from 'src/auth/auth.model';
 
 @Module({
   imports: [
+    MongooseModule.forFeature([{ name: 'auths', schema: authSchema }]),
     MongooseModule.forFeature([{ name: 'contents', schema: contentsSchema }]),
     MongooseModule.forFeature([{ name: 'audios', schema: audioSchema }]),
     MongooseModule.forFeature([{ name: 'mcqs', schema: mcqSchema }]),

@@ -6,11 +6,12 @@ import { AuthService } from './auth.service';
 import { contentsSchema } from 'src/contents/contents.model';
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: 'auth', schema: authSchema }]),
+    MongooseModule.forFeature([{ name: 'auths', schema: authSchema }]),
     MongooseModule.forFeature([{ name: 'contents', schema: contentsSchema }]),
   ],
   controllers: [AuthController],
   providers: [AuthService],
+  exports: [AuthService],
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {}

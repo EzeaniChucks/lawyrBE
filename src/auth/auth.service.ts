@@ -19,7 +19,7 @@ import {
 
 @Injectable()
 export class AuthService {
-  constructor(@InjectModel('auth') private readonly user: Model<any>) {}
+  constructor(@InjectModel('auths') private readonly user: Model<any>) {}
 
   async isLoggedIn(req: Request, res: Response) {
     try {
@@ -75,6 +75,7 @@ export class AuthService {
           phoneNumber,
           isVerified,
           isAdmin,
+          assets,
         } = user;
 
         await attachCookiesToResponse(res, {
@@ -83,6 +84,7 @@ export class AuthService {
           lastName,
           phoneNumber,
           isAdmin,
+          assets,
         });
 
         return res.status(200).json({
@@ -117,6 +119,7 @@ export class AuthService {
         lastName: user?.lastName,
         phoneNumber: user?.phoneNumber || '',
         isAdmin: user?.isAdmin,
+        assets: user.assets,
       };
       await attachCookiesToResponse(res, tokenUser);
       return res.status(200).json({ msg: 'Success' });
@@ -190,7 +193,7 @@ export class AuthService {
     try {
       const userobj = await this.user.findOne({ _id: userId });
       const currentMCQ = userobj.mcqs.find(
-        (each: any) => each._id.toString() === mcqId,
+        (each: any) => each._id.toString() === mcqId.toString(),
       );
       if (!userobj || !currentMCQ) {
         return res
@@ -380,7 +383,11 @@ export class AuthService {
       return res.status(500).json({ msg: err.message });
     }
   }
-  async fetchCurrentOngoingGroupMCQ(userId: string, mcqId: string, res: Response) {
+  async fetchCurrentOngoingGroupMCQ(
+    userId: string,
+    mcqId: string,
+    res: Response,
+  ) {
     try {
       const userobj = await this.user.findOne({ _id: userId });
       const currentMCQ = userobj.groupMcqs.find(
@@ -420,9 +427,11 @@ export class AuthService {
   ) {
     try {
       const checkuser = await this.user.findOne({ _id: userId });
-      const isDateExpired = checkuser?.groupMcqs?.find((eachQa: MCQuestionsDTO) => {
-        return eachQa?._id.toString() === mcqId;
-      });
+      const isDateExpired = checkuser?.groupMcqs?.find(
+        (eachQa: MCQuestionsDTO) => {
+          return eachQa?._id.toString() === mcqId;
+        },
+      );
       if (!isDateExpired) {
         return res
           .status(400)

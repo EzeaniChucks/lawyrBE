@@ -8,13 +8,14 @@ import { Model } from 'mongoose';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.services';
 import { ChildProcess, fork } from 'child_process';
 import { Request, Response } from 'express';
-import { jwtIsValid } from 'src/utils';
+import { attachCookiesToResponse, jwtIsValid } from 'src/utils';
 import { Contents, FullContentsDetails } from './contents.dto';
 
 @Injectable()
 export class ContentsService {
   constructor(
     @InjectModel('contents') private readonly content: Model<any>,
+    @InjectModel('auths') private readonly auth: Model<any>,
     @InjectModel('mcqs') private readonly mcq: Model<any>,
     @InjectModel('docxpdfs') private readonly pdf: Model<any>,
     @InjectModel('audios') private readonly audio: Model<any>,
@@ -80,7 +81,157 @@ export class ContentsService {
       throw new InternalServerErrorException({ msg: err?.message });
     }
   }
-  async updateSuperFolder(newSuperFolder: FullContentsDetails, res: Response) {
+
+  //adds a resource or folder to the user cart, purchases or subscriptions records
+  async addItemToUserAssets(
+    userId: string,
+    item: {
+      resourceName: string;
+      resourceType: string;
+      resourceId: string;
+      resourceParentIds: string;
+    },
+    destination: 'subscriptions array' | 'purchases array' | 'cart array',
+    res: Response,
+  ) {
+    try {
+      //check if item is already in cart
+      let checkusercart = await this.auth.findOne({
+        _id: userId,
+        'assets.cart': { $elemMatch: { resourceId: item.resourceId } },
+      });
+
+      if (checkusercart) {
+        return res.status(400).json({
+          msg: 'unsuccesful',
+          payload: 'item is already in your cart',
+        });
+      }
+
+      const user = await this.auth.findOne({ _id: userId });
+      if (destination === 'subscriptions array') {
+        user.assets.subscriptions.push(item);
+      }
+      if (destination === 'purchases array') {
+        user.assets.purchases.push(item);
+      }
+      if (destination === 'cart array') {
+        user.assets.cart.push(item);
+      }
+      user.save();
+      const { _id, firstName, lastName, isAdmin, assets, phoneNumber } = user;
+      await attachCookiesToResponse(res, {
+        _id,
+        firstName,
+        lastName,
+        isAdmin,
+        assets,
+        phoneNumber,
+      });
+      return res
+        .status(200)
+        .json({ msg: 'success', payload: 'item successfully added to cart' });
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
+
+  //removes a resource or folder to the user cart, purchases or subscriptions records
+  async removeItemFromUserAssets(
+    userId: string,
+    item: {
+      resourceName: string;
+      resourceType: string;
+      resourceId: string;
+      resourceParentIds: string;
+    },
+    destination: 'subscriptions array' | 'purchases array' | 'cart array',
+    res: Response,
+  ) {
+    try {
+      //check if item is already in cart
+      let checkusercart = await this.auth.findOne({
+        _id: userId,
+        'assets.cart': { $elemMatch: { resourceId: item.resourceId } },
+      });
+
+      if (checkusercart) {
+        return res.status(400).json({
+          msg: 'unsuccesful',
+          payload: 'item is already in your cart',
+        });
+      }
+
+      let user;
+      if (destination === 'subscriptions array') {
+        await this.auth.findOneAndUpdate(
+          { _id: userId },
+          {
+            $pull: {
+              'assets.subscriptions': {
+                resourceId: item?.resourceId,
+              },
+            },
+          },
+          { new: true },
+        );
+      }
+      if (destination === 'purchases array') {
+        await this.auth.findOneAndUpdate(
+          { _id: userId },
+          { $pull: { 'assets.purchases': { resourceId: item?.resourceId } } },
+          { new: true },
+        );
+      }
+      if (destination === 'cart array') {
+        await this.auth.findOneAndUpdate(
+          { _id: userId },
+          { $pull: { 'assets.cart': { resourceId: item?.resourceId } } },
+          { new: true },
+        );
+      }
+      const { _id, firstName, lastName, isAdmin, assets, phoneNumber } = user;
+      await attachCookiesToResponse(res, {
+        _id,
+        firstName,
+        lastName,
+        isAdmin,
+        assets,
+        phoneNumber,
+      });
+      return res
+        .status(200)
+        .json({ msg: 'success', payload: 'item successfully added to cart' });
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
+
+  async updateSuperFolder(
+    newSuperFolder: FullContentsDetails,
+    req: Request,
+    res: Response,
+  ) {
+    try {
+      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+      if (!decoded?.isAdmin) {
+        return res.status(400).json({ msg: 'Forbidden request' });
+      }
+      const singlecontent = await this.content.findOneAndUpdate(
+        { _id: newSuperFolder._id },
+        { $set: newSuperFolder },
+        { new: true },
+      );
+      return res.status(200).json({ payload: singlecontent });
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
+
+  async updateUserSubORPurchaseOnSuperFolder(
+    newSuperFolder: FullContentsDetails,
+    res: Response,
+  ) {
     try {
       const singlecontent = await this.content.findOneAndUpdate(
         { _id: newSuperFolder._id },
@@ -92,7 +243,8 @@ export class ContentsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-  async doesResourceExist(
+
+  async doesResourceExistSomewhereElse(
     resourceId: string | undefined,
     resourceName: string,
     res: Response,
@@ -273,6 +425,54 @@ export class ContentsService {
       return res.status(500).json({ msg: err.message });
     }
   }
+  async canFolderBeDeleted(
+    resourceName: string,
+    folder: FullContentsDetails,
+    res: Response,
+  ) {
+    try {
+      if (resourceName === 'folder') {
+        let can_folder_be_deleted = true;
+        const queue: FullContentsDetails[] = [folder];
+
+        while (queue.length) {
+          let len = queue.length;
+          queue.map((eachCont) => {
+            if (
+              eachCont?.subscribedUsersIds.length > 0 ||
+              eachCont?.paidUsersIds?.length > 0
+            ) {
+              can_folder_be_deleted = false;
+            }
+            return eachCont;
+          });
+
+          while (len--) {
+            let node = queue.shift();
+            if (node) {
+              for (let child of node.children) {
+                queue.push(child);
+              }
+            }
+          }
+        }
+        if (!can_folder_be_deleted) {
+          return res.status(200).json({
+            msg: `sucesss`,
+            payload: false,
+          });
+        } else {
+          return res.status(200).json({ mag: 'success', payload: true });
+        }
+      } else {
+        return res
+          .status(400)
+          .json({ msg: 'Bad request. Type of input is not folder' });
+      }
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
   async canUserAccessResource(
     resourceId: string | undefined,
     resourceName: string,
@@ -282,15 +482,19 @@ export class ContentsService {
     try {
       if (resourceName !== 'folder') {
         let can_user_access_resource = false;
+
+        //helper function
         const returnAccessSub = (result: any) => {
           let access = false;
           result?.subscribedUsersIds?.map((eachSub: { userId: string }) => {
-            if (eachSub.userId.toString() === userId.toString()) {
+            if (eachSub?.userId?.toString() === userId?.toString()) {
               access = true;
             }
           });
           return access;
         };
+
+        //helper function
         const returnAccessPurchase = (result: any) => {
           let access = false;
           result?.paidUsersIds?.map((eachPurchase: { userId: string }) => {
@@ -378,6 +582,7 @@ export class ContentsService {
       return res.status(500).json({ msg: err.message });
     }
   }
+  //endpoint called after adding a new file to a folder. Useful for locating the file within the folder in the future
   async addParentIdsToResource({
     resourceName,
     resourceId,
@@ -508,6 +713,121 @@ export class ContentsService {
       return res.status(500).json({ msg: err.message });
     }
   }
+  async adduserIdsToResourcePaymentArrays({
+    resourceName,
+    resourceId,
+    settingsObj,
+    res,
+  }: {
+    resourceName: string;
+    resourceId: string;
+    settingsObj: {
+      subscribedUsersIds: { userName: string; userId: string };
+      paidUsersIds: { userName: string; userId: string };
+    };
+    res: Response;
+  }) {
+    try {
+      const { subscribedUsersIds, paidUsersIds } = settingsObj;
+      if (subscribedUsersIds === undefined && paidUsersIds === undefined) {
+        return res.status(400).json({ msg: 'Incomplete credentials' });
+      }
+
+      if (resourceName === 'flashcard') {
+        if (settingsObj.subscribedUsersIds.userId) {
+          await this.flashcard.findOneAndUpdate(
+            { _id: resourceId },
+            { $push: { subscribedUsersIds: settingsObj?.subscribedUsersIds } },
+            { new: true },
+          );
+        } else {
+          await this.flashcard.findOneAndUpdate(
+            { _id: resourceId },
+            { $push: { paidUsersIds: settingsObj?.paidUsersIds } },
+            { new: true },
+          );
+        }
+      }
+      if (resourceName === 'mcq') {
+        if (settingsObj.subscribedUsersIds.userId) {
+          await this.mcq.findOneAndUpdate(
+            { _id: resourceId },
+            { $push: { subscribedUsersIds: settingsObj?.subscribedUsersIds } },
+            { new: true },
+          );
+        } else {
+          await this.mcq.findOneAndUpdate(
+            { _id: resourceId },
+            { $push: { paidUsersIds: settingsObj?.paidUsersIds } },
+            { new: true },
+          );
+        }
+      }
+      if (resourceName === 'video') {
+        if (settingsObj.subscribedUsersIds.userId) {
+          await this.video.findOneAndUpdate(
+            { _id: resourceId },
+            { $push: { subscribedUsersIds: settingsObj?.subscribedUsersIds } },
+            { new: true },
+          );
+        } else {
+          await this.video.findOneAndUpdate(
+            { _id: resourceId },
+            { $push: { paidUsersIds: settingsObj?.paidUsersIds } },
+            { new: true },
+          );
+        }
+      }
+      if (resourceName === 'audio') {
+        if (settingsObj.subscribedUsersIds.userId) {
+          await this.audio.findOneAndUpdate(
+            { _id: resourceId },
+            { $push: { subscribedUsersIds: settingsObj?.subscribedUsersIds } },
+            { new: true },
+          );
+        } else {
+          await this.audio.findOneAndUpdate(
+            { _id: resourceId },
+            { $push: { paidUsersIds: settingsObj?.paidUsersIds } },
+            { new: true },
+          );
+        }
+      }
+      if (resourceName === 'essay') {
+        if (settingsObj.subscribedUsersIds.userId) {
+          await this.essay.findOneAndUpdate(
+            { _id: resourceId },
+            { $push: { subscribedUsersIds: settingsObj?.subscribedUsersIds } },
+            { new: true },
+          );
+        } else {
+          await this.essay.findOneAndUpdate(
+            { _id: resourceId },
+            { $push: { paidUsersIds: settingsObj?.paidUsersIds } },
+            { new: true },
+          );
+        }
+      }
+      if (resourceName === 'pdf') {
+        if (settingsObj.subscribedUsersIds.userId) {
+          await this.pdf.findOneAndUpdate(
+            { _id: resourceId },
+            { $push: { subscribedUsersIds: settingsObj?.subscribedUsersIds } },
+            { new: true },
+          );
+        } else {
+          await this.pdf.findOneAndUpdate(
+            { _id: resourceId },
+            { $push: { paidUsersIds: settingsObj?.paidUsersIds } },
+            { new: true },
+          );
+        }
+      }
+      return res.status(200).json({ payload: 'success' });
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
   async monifyResource({
     resourceName,
     resourceId,
@@ -585,7 +905,6 @@ export class ContentsService {
       return res.status(500).json({ msg: err.message });
     }
   }
-
   async unmonifyResource({
     resourceName,
     resourceId,

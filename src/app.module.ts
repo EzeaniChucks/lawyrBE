@@ -16,6 +16,7 @@ import { ContentsModule } from './contents/contents.module';
 import { ChatsModule } from './chats/chats.module';
 import { NotifModule } from './notificationModule/notifModule';
 import { InvitationModule } from './invitationModule/invitationModule';
+import { PaymentModule } from './paymentModule/payment.module';
 // import {CloudinaryStorage} from 'multer-storage-cloudinary'
 // MulterModule.registerAsync({
 //   useFactory: () => ({
@@ -27,10 +28,10 @@ import { InvitationModule } from './invitationModule/invitationModule';
 
 @Module({
   imports: [
-    AdminModule,
-    AuthModule,
     ConfigModule.forRoot(),
     MongooseModule.forRoot(process.env.DB_CONNECTION),
+    AdminModule,
+    AuthModule,
     CloudinaryModule,
     ContentsModule,
     EssaysModule,
@@ -42,6 +43,7 @@ import { InvitationModule } from './invitationModule/invitationModule';
     ChatsModule,
     NotifModule,
     InvitationModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

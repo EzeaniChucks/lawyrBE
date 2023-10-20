@@ -9,7 +9,32 @@ export const authSchema = new mongoose.Schema(
     email: { type: String, require: true, unique: true },
     isAdmin: { type: Boolean, default: false },
     isSubAdmin: { type: Boolean, default: false },
-    assets: { subscriptions: [], purchases: [], cart: [] },
+    assets: {
+      subscriptions: [
+        {
+          resourceName: String,
+          resourceId: mongoose.SchemaTypes.ObjectId,
+          resourceType: String,
+          resourceParentIds: [mongoose.SchemaTypes.ObjectId],
+        },
+      ],
+      purchases: [
+        {
+          resourceName: String,
+          resourceId: mongoose.SchemaTypes.ObjectId,
+          resourceType: String,
+          resourceParentIds: [mongoose.SchemaTypes.ObjectId],
+        },
+      ],
+      cart: [
+        {
+          resourceName: String,
+          resourceId: mongoose.SchemaTypes.ObjectId,
+          resourceType: String,
+          resourceParentIds: [mongoose.SchemaTypes.ObjectId],
+        },
+      ],
+    },
     mcqs: [
       {
         creatorId: { type: mongoose.SchemaTypes.ObjectId, required: true },

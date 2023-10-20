@@ -7,7 +7,6 @@ export class ChatsService {
   constructor(
     @InjectModel('testchats') private readonly testchats: Model<any>,
     @InjectModel('grouptests') private readonly grouptests: Model<any>,
-    @InjectModel('auths') private readonly auth: Model<any>,
   ) {}
   // messages: any[] = [{ name: 'Bot', text: 'Welcome to this chatroom' }];
   clientToUser = {};

@@ -54,18 +54,83 @@ export class ContentsController {
   async updateSuperFolder(
     @Body() superFolder: FullContentsDetails,
     @Res() res: Response,
+    @Req() req: Request,
   ) {
-    return this.contentservice.updateSuperFolder(superFolder, res);
+    return this.contentservice.updateSuperFolder(superFolder, req, res);
+  }
+  @Put('add_item_to_user_assets')
+  async addItemToUserAssets(
+    @Body()
+    body: {
+      userId: string;
+      item: {
+        resourceName: string;
+        resourceType: string;
+        resourceId: string;
+        resourceParentIds: string;
+      };
+      destination: 'subscriptions array' | 'purchases array' | 'cart array';
+    },
+    @Res() res: Response,
+    @Req() req: Request,
+  ) {
+    const { userId, item, destination } = body;
+    return this.contentservice.addItemToUserAssets(
+      userId,
+      item,
+      destination,
+      res,
+    );
+  }
+  @Put('remove_item_from_user_assets')
+  async removeItemFromUserAssets(
+    @Body()
+    body: {
+      userId: string;
+      item: {
+        resourceName: string;
+        resourceType: string;
+        resourceId: string;
+        resourceParentIds: string;
+      };
+      destination: 'subscriptions array' | 'purchases array' | 'cart array';
+    },
+    @Res() res: Response,
+    @Req() req: Request,
+  ) {
+    const { userId, item, destination } = body;
+    return this.contentservice.removeItemFromUserAssets(
+      userId,
+      item,
+      destination,
+      res,
+    );
+  }
+
+  @Put('update_payment_on_single_content')
+  async updateUserSubORPurchaseOnSuperFolder(
+    @Body() superFolder: FullContentsDetails,
+    @Res() res: Response,
+  ) {
+    return this.contentservice.updateUserSubORPurchaseOnSuperFolder(
+      superFolder,
+      res,
+    );
   }
   @Post('does_resource_exist')
-  async doesResourceExist(
+  async doesResourceExistSomewhereElse(
     @Body()
     body: { resourceId: string | undefined; resourceName: string },
     @Res() res: Response,
   ) {
     const { resourceId, resourceName } = body;
-    return this.contentservice.doesResourceExist(resourceId, resourceName, res);
+    return this.contentservice.doesResourceExistSomewhereElse(
+      resourceId,
+      resourceName,
+      res,
+    );
   }
+
   @Post('can_resource_be_deleted')
   async canResourceBeDeleted(
     @Body()
@@ -79,6 +144,17 @@ export class ContentsController {
       res,
     );
   }
+
+  @Post('can_folder_be_deleted')
+  async canFolderBeDeleted(
+    @Body()
+    body: { folder: FullContentsDetails; resourceName: string },
+    @Res() res: Response,
+  ) {
+    const { folder, resourceName } = body;
+    return this.contentservice.canFolderBeDeleted(resourceName, folder, res);
+  }
+
   @Post('can_user_access_resource')
   async canUserAccessResource(
     @Body()
@@ -147,6 +223,28 @@ export class ContentsController {
       resourceId,
       settingsObj,
       req,
+      res,
+    });
+  }
+
+  @Put('add_userIds_to_resource_payment_arrays')
+  async adduserIdsToResourcePaymentArrays(
+    @Body()
+    body: {
+      resourceName: string;
+      resourceId: string;
+      settingsObj: {
+        subscribedUsersIds: { userName: string; userId: string };
+        paidUsersIds: { userName: string; userId: string };
+      };
+    },
+    @Res() res: Response,
+  ) {
+    const { resourceName, resourceId, settingsObj } = body;
+    return this.contentservice.adduserIdsToResourcePaymentArrays({
+      resourceName,
+      resourceId,
+      settingsObj,
       res,
     });
   }

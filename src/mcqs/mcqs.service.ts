@@ -23,7 +23,7 @@ export class McqsService {
     @InjectModel('mcqs') private readonly mcqs: Model<any>,
     @InjectModel('grouptests') private readonly grouptests: Model<any>,
     @InjectModel('contents') private readonly contents: Model<any>,
-    @InjectModel('auth') private readonly auth: Model<any>,
+    @InjectModel('auths') private readonly auth: Model<any>,
     private readonly notifService: NotifService,
     private readonly invitationService: InvitationService,
   ) {}
@@ -191,7 +191,73 @@ export class McqsService {
           ?.status(400)
           ?.json({ msg: 'You have not been invited to this test yet' });
       }
-      return res?.status(200)?.json({ msg: 'success', payload: ongoingTest });
+
+      //confirm to see if a new participant can now take test, e.g. user that recently paid for the resource
+      let mcqId = ongoingTest?.clonedresourceId;
+      let mcq = await this.mcqs.findOne({ _id: mcqId });
+      let updatedFriendsArray = [];
+      //blocking code
+      if (mcq?.isSubscription) {
+        for (let eachId of ongoingTest?.initialTestParticipants) {
+          let found = mcq?.subscribedUsersIds.find(
+            (subUsers: { userId: string }) => {
+              return subUsers?.userId.toString() === eachId?.userId.toString();
+            },
+          );
+          if (found) {
+            updatedFriendsArray.push({
+              userId: eachId?.userId,
+              canTakeTest: true,
+              userName: eachId?.userName,
+            });
+          } else {
+            updatedFriendsArray.push({
+              userId: eachId?.userId,
+              canTakeTest: false,
+              userName: eachId?.userName,
+            });
+          }
+        }
+      } else if (mcq?.isPurchase) {
+        for (let eachId of ongoingTest?.initialTestParticipants) {
+          const found = mcq?.paidUsersIds.find(
+            (paidUsers: { userId: string }) => {
+              return paidUsers?.userId.toString() === eachId?.userId.toString();
+            },
+          );
+          if (found) {
+            updatedFriendsArray.push({
+              userId: eachId?.userId,
+              canTakeTest: true,
+              userName: eachId?.userName,
+            });
+          } else {
+            updatedFriendsArray.push({
+              userId: eachId?.userId,
+              canTakeTest: false,
+              userName: eachId?.userName,
+            });
+          }
+        }
+      } else {
+        ongoingTest?.initialTestParticipants?.map((eachUser) => {
+          updatedFriendsArray.push({
+            userId: eachUser.userId,
+            canTakeTest: true,
+            userName: eachUser.userName,
+          });
+          return;
+        });
+      }
+      //end of blocking code
+      const groupTestupdate = await this.grouptests.findOneAndUpdate(
+        { _id: grouptestId },
+        { $set: { initialTestParticipants: updatedFriendsArray } },
+        { new: true },
+      );
+      return res
+        ?.status(200)
+        ?.json({ msg: 'success', payload: groupTestupdate });
     } catch (err) {
       return res?.status(500)?.json({ msg: err?.message });
     }

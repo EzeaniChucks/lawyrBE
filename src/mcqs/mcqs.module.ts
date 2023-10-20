@@ -11,7 +11,7 @@ import { InvitationModule } from 'src/invitationModule/invitationModule';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: 'auth', schema: authSchema }]),
+    MongooseModule.forFeature([{ name: 'auths', schema: authSchema }]),
     MongooseModule.forFeature([{ name: 'mcqs', schema: mcqSchema }]),
     MongooseModule.forFeature([{ name: 'contents', schema: contentsSchema }]),
     MongooseModule.forFeature([
