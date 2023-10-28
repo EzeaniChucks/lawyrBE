@@ -9,25 +9,50 @@ import {
   Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDTO, RegisterDTO } from './auth.dto';
+import { LoginDTO, RegisterDTO, UserDetailsResponseDTO } from './auth.dto';
 import { Response, Request } from 'express';
 import { MCQScenarios, MCQuestionsDTO, mcqDetailsDTO } from 'src/mcqs/mcqs.dto';
 import { Date } from 'mongoose';
+import { ApiBody, ApiOkResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @Controller('auth')
+@ApiTags('auth')
 export class AuthController {
   constructor(private readonly authsevice: AuthService) {}
+
   @Get('is_logged_in')
+  @ApiResponse({ status: 200, description: 'Returns true. User is logged in' })
+  @ApiResponse({
+    status: 400,
+    description: 'Returns false. User cookie has expired',
+  })
+  @ApiBody({ type: 'cookie string' })
   async isLoggedIn(@Res() res: Response, @Req() req: Request) {
     return await this.authsevice.isLoggedIn(req, res);
   }
 
   @Get('is_admin')
+  @ApiResponse({ status: 200, description: 'Returns true. User is admin' })
+  @ApiResponse({
+    status: 400,
+    description: 'Returns false. User is not admin',
+  })
+  @ApiBody({ type: 'cookie string' })
   async isAdmin(@Res() res: Response, @Req() req: Request) {
     return await this.authsevice.isAdmin(req, res);
   }
 
   @Get('full_user_details')
+  @ApiResponse({ status: 200, description: 'Returns true. User is logged in' })
+  @ApiResponse({
+    status: 400,
+    description: 'Returns false. User cookie has expired',
+  })
+  // @ApiOkResponse({
+  //   description: 'Response with user object having few important details',
+  //   type: UserDetailsResponseDTO,
+  // })
+  @ApiBody({ type: 'cookie string' })
   async fullUserDetails(@Res() res: Response, @Req() req: Request) {
     return await this.authsevice.getFullUserDetails(req, res);
   }
@@ -89,6 +114,17 @@ export class AuthController {
   ) {
     const { userId } = param;
     return this.authsevice.fetchAllCompletedMCQs(userId, res);
+  }
+  @Get('fetch_all_completed_grouptests/:userId')
+  async fetchAllCompletedGroupTests(
+    @Param()
+    param: {
+      userId: string;
+    },
+    @Res() res: Response,
+  ) {
+    const { userId } = param;
+    return this.authsevice.fetchAllCompletedGroupTests(userId, res);
   }
 
   @Put('edit_ongoing_mcq')

@@ -1,3 +1,5 @@
+import { IsString, IsInt } from 'class-validator';
+
 export class RegisterDTO {
   email: string;
   password: string;
@@ -9,4 +11,13 @@ export class RegisterDTO {
 export class LoginDTO {
   email: string;
   password: string;
+}
+
+export class UserDetailsResponseDTO {
+  @IsString()
+  _id: string;
+  @IsInt()
+  name: string;
+  @IsString()
+  isAdmin: boolean;
 }

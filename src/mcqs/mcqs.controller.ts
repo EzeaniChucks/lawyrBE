@@ -13,8 +13,10 @@ import { Request, Response } from 'express';
 import { cardBody, cardIdDTO } from 'src/flashcard/flashcards.dto';
 import { McqsService } from './mcqs.service';
 import { mcqBodyANDDetails, mcqIdDTO } from './mcqs.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('mcqs')
+@ApiTags('MCQs')
 export class McqsController {
   constructor(private readonly mcqservice: McqsService) {}
   @Post('create_mcq')

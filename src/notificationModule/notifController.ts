@@ -1,8 +1,10 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { NotifService } from './notifService';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('notifications')
+@ApiTags('Notifications')
 export class NotifController {
   constructor(private readonly notificationservice: NotifService) {}
   @Post('mark_message_as_read')

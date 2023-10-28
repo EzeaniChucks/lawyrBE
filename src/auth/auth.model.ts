@@ -36,7 +36,7 @@ export const authSchema = new mongoose.Schema(
       ],
     },
     mcqs: [
-      {
+      new mongoose.Schema({
         creatorId: { type: mongoose.SchemaTypes.ObjectId, required: true },
         clonedresourceId: {
           type: mongoose.SchemaTypes.ObjectId,
@@ -78,10 +78,10 @@ export const authSchema = new mongoose.Schema(
         totalAnsweredQuestions: { type: Number, default: 0 },
         totalRightQuestions: { type: Number, default: 0 },
         totalWrongQuestions: { type: Number, default: 0 },
-      },
+      },{timestamps:true}),
     ],
     groupMcqs: [
-      {
+      new mongoose.Schema({
         creatorId: { type: mongoose.SchemaTypes.ObjectId, required: true },
         grouptestId: { type: mongoose.SchemaTypes.ObjectId, required: true },
         clonedresourceId: {
@@ -124,7 +124,7 @@ export const authSchema = new mongoose.Schema(
         totalAnsweredQuestions: { type: Number, default: 0 },
         totalRightQuestions: { type: Number, default: 0 },
         totalWrongQuestions: { type: Number, default: 0 },
-      },
+      }, {timestamps:true}),
     ],
     userStatus: { type: String, default: 'active', enum: ['active', 'banned'] },
   },

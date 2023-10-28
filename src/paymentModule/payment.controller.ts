@@ -11,8 +11,10 @@ import {
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { Response, query, response } from 'express';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('wallet')
+@ApiTags('Wallet and payment')
 export class PaymentController {
   constructor(private readonly paymentservice: PaymentService) {}
   //flutterwave

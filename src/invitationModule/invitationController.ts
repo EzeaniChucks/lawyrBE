@@ -1,7 +1,9 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { InvitationService } from './invitationService';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('invitations')
+@ApiTags('Invitations to tests')
 export class InvitationController {
   constructor(private readonly invitationservice: InvitationService) {}
   @Post('mark_invitation_as_read')

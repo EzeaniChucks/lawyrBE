@@ -12,8 +12,10 @@ import {
 import { EssaysService } from './essays.service';
 import { essayBodyANDDetails, essayIdDTO } from './essays.dto';
 import { Request, Response } from 'express';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('essays')
+@ApiTags('Essays')
 export class EssaysController {
   constructor(private readonly essayservice: EssaysService) {}
   @Post('create_essay')

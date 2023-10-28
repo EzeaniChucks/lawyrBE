@@ -213,8 +213,22 @@ export class AuthService {
   async fetchAllCompletedMCQs(userId: string, res: Response) {
     try {
       const userobj = await this.user.findOne({ _id: userId });
+      let fakedate: number = 0;
       const allMCQs = userobj.mcqs.map((each: any) => {
-        return { mcqDetails: each.mcqDetails, _id: each._id };
+        fakedate++
+        return {
+          mcqDetails: each?.mcqDetails,
+          _id: each?._id,
+          status: each?.status,
+          totalRightQuestions: each?.totalRightQuestions,
+          questionLength: each?.QAs?.length || 0,
+          createdAt:
+            each?.createdAt ||
+            new Date(Date.now() - fakedate * 24 * 60 * 60 * 1000),
+          updatedAt:
+            each?.updatedAt ||
+            new Date(Date.now() - fakedate * 24 * 60 * 60 * 800),
+        };
       });
       if (!userobj || !allMCQs) {
         return res
@@ -226,6 +240,37 @@ export class AuthService {
       return res.status(500).json({ msg: err.message });
     }
   }
+  async fetchAllCompletedGroupTests(userId: string, res: Response) {
+    try {
+      const userobj = await this.user.findOne({ _id: userId });
+      let fakedate:number = 0
+      const allMCQs = userobj.groupMcqs.map((each: any) => {
+        fakedate++
+        return {
+          mcqDetails: each?.mcqDetails,
+          _id: each?._id,
+          status: each?.status,
+          totalRightQuestions: each?.totalRightQuestions,
+          questionLength: each?.QAs?.length || 0,
+          createdAt:
+            each?.createdAt ||
+            new Date(Date.now() - fakedate * 24 * 60 * 60 * 1000),
+          updatedAt:
+            each?.updatedAt ||
+            new Date(Date.now() - fakedate * 24 * 60 * 60 * 800),
+        };
+      });
+      if (!userobj || !allMCQs) {
+        return res
+          .status(400)
+          .json({ msg: 'Bad request. Something went wrong.' });
+      }
+      return res.status(200).json({ msg: 'success', payload: allMCQs });
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
+
   async editOngoingMCQ(
     userId: string,
     QAs: MCQuestionsDTO[],

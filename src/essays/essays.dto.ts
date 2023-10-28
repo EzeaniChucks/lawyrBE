@@ -25,6 +25,7 @@ export type essayBodyDTO = {
     linkedTo: string[];
   }[];
   QAs: essayQuestionsDTO[];
+  QAview:string;
 };
 export class essayBodyANDDetails {
   details: essayDetailsDTO;

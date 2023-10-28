@@ -12,8 +12,10 @@ import {
 import { Request, Response } from 'express';
 import { FlashCardsService } from './flashcards.service';
 import { cardBody, cardIdDTO } from './flashcards.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('flashcards')
+@ApiTags('Flashcards')
 export class FlashCardController {
   constructor(private readonly flashservice: FlashCardsService) {}
   @Post('create_flashcard')

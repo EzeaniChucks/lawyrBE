@@ -10,10 +10,10 @@ async function bootstrap() {
   });
   app.use(cookieParser(process.env.JWT_SECRET));
   const options = new DocumentBuilder()
-    .setTitle('CharityOrg API documentation')
-    .setDescription('Protected routes for the charityOrg API')
+    .setTitle('Lawyr API documentation')
+    .setDescription('Routes for Lawyr App')
     .setVersion('1.0')
-    .addTag('charity organization')
+    .addTag('Lawyr exams prep platform')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, options);

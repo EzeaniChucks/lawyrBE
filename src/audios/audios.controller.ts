@@ -16,8 +16,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 import { AudiosService } from './audios.service';
 import { File } from 'buffer';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('audios')
+@ApiTags('Audio')
 export class AudiosController {
   constructor(private readonly audioservice: AudiosService) {}
   @Post('upload_audio')

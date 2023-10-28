@@ -81,7 +81,6 @@ export class ContentsService {
       throw new InternalServerErrorException({ msg: err?.message });
     }
   }
-
   //adds a resource or folder to the user cart, purchases or subscriptions records
   async addItemToUserAssets(
     userId: string,
@@ -135,7 +134,6 @@ export class ContentsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-
   //removes a resource or folder to the user cart, purchases or subscriptions records
   async removeItemFromUserAssets(
     userId: string,
@@ -206,7 +204,6 @@ export class ContentsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-
   async updateSuperFolder(
     newSuperFolder: FullContentsDetails,
     req: Request,
@@ -227,7 +224,6 @@ export class ContentsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-
   async updateUserSubORPurchaseOnSuperFolder(
     newSuperFolder: FullContentsDetails,
     res: Response,
@@ -243,7 +239,6 @@ export class ContentsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-
   async doesResourceExistSomewhereElse(
     resourceId: string | undefined,
     resourceName: string,
@@ -582,6 +577,151 @@ export class ContentsService {
       return res.status(500).json({ msg: err.message });
     }
   }
+  async isUserSubActive(
+    contentId: string,
+    userId: string,
+    resourceName: string,
+    resourceId: string,
+    res: Response,
+  ) {
+    try {
+      if (resourceName !== 'folder') {
+        let isUserSubActive = false;
+        if (resourceName === 'flashcard') {
+          let result = await this.flashcard.findOne({ _id: resourceId });
+          let subIsAcitve = result?.subscribedUsersIds.find(
+            (eachUser: { userId: String; expiryDate: Date }) => {
+              return (
+                eachUser.userId === userId &&
+                new Date(eachUser?.expiryDate) > new Date()
+              );
+            },
+          );
+          if (!subIsAcitve) {
+            isUserSubActive = false;
+          } else {
+            isUserSubActive = true;
+          }
+        }
+        if (resourceName === 'mcq') {
+          let result = await this.mcq.findOne({ _id: resourceId });
+          let subIsAcitve = result?.subscribedUsersIds.find(
+            (eachUser: { userId: String; expiryDate: Date }) => {
+              return (
+                eachUser.userId === userId &&
+                new Date(eachUser.expiryDate) > new Date()
+              );
+            },
+          );
+          if (!subIsAcitve) {
+            isUserSubActive = false;
+          } else {
+            isUserSubActive = true;
+          }
+        }
+        if (resourceName === 'video') {
+          let result = await this.video.findOne({ _id: resourceId });
+          let subIsAcitve = result?.subscribedUsersIds.find(
+            (eachUser: { userId: String; expiryDate: Date }) => {
+              return (
+                eachUser.userId === userId &&
+                new Date(eachUser.expiryDate) > new Date()
+              );
+            },
+          );
+          if (!subIsAcitve) {
+            isUserSubActive = false;
+          } else {
+            isUserSubActive = true;
+          }
+        }
+        if (resourceName === 'audio') {
+          let result = await this.audio.findOne({ _id: resourceId });
+          let subIsAcitve = result?.subscribedUsersIds.find(
+            (eachUser: { userId: String; expiryDate: Date }) => {
+              return (
+                eachUser.userId === userId &&
+                new Date(eachUser.expiryDate) > new Date()
+              );
+            },
+          );
+          if (!subIsAcitve) {
+            isUserSubActive = false;
+          } else {
+            isUserSubActive = true;
+          }
+        }
+        if (resourceName === 'essay') {
+          let result = await this.essay.findOne({ _id: resourceId });
+          let subIsAcitve = result?.subscribedUsersIds.find(
+            (eachUser: { userId: String; expiryDate: Date }) => {
+              return (
+                eachUser.userId === userId &&
+                new Date(eachUser.expiryDate) > new Date()
+              );
+            },
+          );
+          if (!subIsAcitve) {
+            isUserSubActive = false;
+          } else {
+            isUserSubActive = true;
+          }
+        }
+        if (resourceName === 'pdf') {
+          let result = await this.pdf.findOne({ _id: resourceId });
+          let subIsAcitve = result?.subscribedUsersIds.find(
+            (eachUser: { userId: String; expiryDate: Date }) => {
+              return (
+                eachUser.userId === userId &&
+                new Date(eachUser.expiryDate) > new Date()
+              );
+            },
+          );
+          if (!subIsAcitve) {
+            isUserSubActive = false;
+          } else {
+            isUserSubActive = true;
+          }
+        }
+        if (!isUserSubActive) {
+          let content = await this.content.findOne({ _id: contentId });
+          let childProcess = fork(`./src/removesubscription.js`);
+          let promise = new Promise<any>((resolve, reject) => {
+            childProcess.on('message', (receivedvids) => {
+              resolve(receivedvids);
+            });
+            childProcess.on('exit', (code, signal) => {
+              console.log(code, signal);
+            });
+
+            childProcess.send({ userId, data: content });
+          });
+          let response = await promise;
+
+          let result = await this.content.findOneAndUpdate(
+            { _id: contentId },
+            { $set: response },
+            { new: true },
+          );
+          return res.status(400).json({
+            msg: 'Your suscription to this resource has expired',
+            payload: result,
+          });
+        } else {
+          return res
+            .status(200)
+            .json({ msg: 'success', payload: 'user subscription active' });
+        }
+      } else {
+        return res
+          .status(400)
+          .json({ msg: "Bad request. File name cannot be 'folder'" });
+      }
+    } catch (err) {
+      return res.status(500).json({ msg: err.response });
+    }
+  }
+
   //endpoint called after adding a new file to a folder. Useful for locating the file within the folder in the future
   async addParentIdsToResource({
     resourceName,

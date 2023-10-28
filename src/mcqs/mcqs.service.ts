@@ -255,9 +255,10 @@ export class McqsService {
         { $set: { initialTestParticipants: updatedFriendsArray } },
         { new: true },
       );
-      return res
-        ?.status(200)
-        ?.json({ msg: 'success', payload: groupTestupdate });
+      return res?.status(200)?.json({
+        msg: 'success',
+        payload: { ...groupTestupdate._doc, parentFolderIds: mcq?.parentIds },
+      });
     } catch (err) {
       return res?.status(500)?.json({ msg: err?.message });
     }

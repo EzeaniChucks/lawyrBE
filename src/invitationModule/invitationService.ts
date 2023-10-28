@@ -15,14 +15,8 @@ export class InvitationService {
   ) {}
 
   //Helper Method
-  async buildGroupinvitationArray({
-    memberArray,
-    message,
-    link,
-    // userId,
-  }) {
+  async buildGroupinvitationArray({ memberArray, message, link }) {
     return memberArray.reduce((total: [any], item: any) => {
-      // if (item?.toString() === userId) return total; //prevents sending invite to invite logger
       const data = {
         recipientId: item?.userId,
         message,
@@ -62,7 +56,9 @@ export class InvitationService {
   }
   async getinvitations(userId: string) {
     try {
-      const invites = await this.invitations.find({ recipientId: userId });
+      const invites = await this.invitations
+        .find({ recipientId: userId })
+        .select('recipientId has_checked message link createdAt');
       if (!invites) {
         throw new BadRequestException({ msg: 'Something went wrong' });
       }

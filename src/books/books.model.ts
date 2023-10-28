@@ -36,7 +36,7 @@ export const docx_pdfSchema = new mongoose.Schema(
       type: String,
       required: true,
       default: 'months',
-      enum: ['days', 'weeks', 'months', 'years'],
+      enum: ['hours', 'days', 'weeks', 'months', 'years'],
     },
     subscribedUsersIds: { type: Array, default: [] },
     paidUsersIds: { type: Array, default: [] },

@@ -23,13 +23,14 @@ export class EssaysService {
     res: Response,
   ) {
     try {
-      const { scenarios, QAs } = essayBody;
+      const { scenarios, QAs, QAview } = essayBody;
       const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
       const essay = await this.essay.create({
         creatorId: decoded?._id,
         details,
         scenarios,
         QAs,
+        QAview,
       });
       return res.status(201).json({ msg: 'success', payload: essay });
     } catch (err) {
@@ -40,7 +41,7 @@ export class EssaysService {
     try {
       const essay = await this.essay
         .findOne({ _id: essayId })
-        .select('details _id scenarios QAs');
+        .select('details _id scenarios QAs QAview');
       return res.status(200).json({ msg: 'success', payload: essay || {} });
     } catch (err) {
       return res.status(500).json({ msg: err?.message });
@@ -81,11 +82,12 @@ export class EssaysService {
               details,
               scenarios: essayBody?.scenarios,
               QAs: essayBody?.QAs,
+              QAview: essayBody?.QAview || 'horizontal',
             },
           },
           { new: true },
         )
-        .select('details _id scenarios QAs');
+        .select('details _id scenarios QAs QAview');
       return res.status(200).json({ msg: 'success', payload: mcq });
     } catch (err) {
       res.status(500).json({ msg: err?.message });

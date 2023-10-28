@@ -16,8 +16,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 import { Docx_pdfsService } from './books.service';
 import { File } from 'buffer';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('docx_pdfs')
+@ApiTags('Docx_pdfs')
 export class Docx_pdfsController {
   constructor(private readonly docx_pdfservice: Docx_pdfsService) {}
   @Post('upload_docx_pdf')

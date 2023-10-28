@@ -15,8 +15,10 @@ import { ContentsService } from './contents.service';
 import { Request, Response } from 'express';
 import { Contents, FullContentsDetails } from './contents.dto';
 import mongoose from 'mongoose';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('contents')
+@ApiTags('Contents')
 export class ContentsController {
   constructor(private readonly contentservice: ContentsService) {}
   @Get('generate_ids')
@@ -173,6 +175,27 @@ export class ContentsController {
       res,
     );
   }
+  @Post('is_user_sub_active')
+  async isUserSubActive(
+    @Body()
+    body: {
+      contentId: string;
+      userId: string;
+      resourceName: string;
+      resourceId: string;
+    },
+    @Res() res: Response,
+  ) {
+    const { resourceId, resourceName, userId, contentId } = body;
+    return this.contentservice.isUserSubActive(
+      contentId,
+      userId,
+      resourceName,
+      resourceId,
+      res,
+    );
+  }
+
   @Put('add_parent_ids_to_resource')
   async addParentIdsToResource(
     @Body()
