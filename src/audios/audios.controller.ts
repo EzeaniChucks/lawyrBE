@@ -10,7 +10,7 @@ import {
   Req,
   Res,
   UploadedFile,
-  UseInterceptors,
+  // UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
@@ -25,6 +25,7 @@ import {
   ReplaceSingleAudiosDTO,
   UploadAudiosDTO,
 } from './audios.dto';
+import { UseInterceptors } from '@nestjs/common/decorators/core/use-interceptors.decorator';
 
 @Controller('audios')
 @ApiTags('Audios')

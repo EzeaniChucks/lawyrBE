@@ -5,7 +5,7 @@ import {
   OnModuleInit,
   InternalServerErrorException,
   NotFoundException,
-  UnauthorizedException,
+  // UnauthorizedException,
   Res,
   BadRequestException,
   Inject,
@@ -22,6 +22,7 @@ import { Response, response } from 'express';
 // import { AuthService } from 'src/authModule/auth.service';
 import { ModuleRef } from '@nestjs/core';
 import { AuthService } from 'src/auth/auth.service';
+import { UnauthorizedException } from '@nestjs/common/exceptions/unauthorized.exception';
 
 @Injectable()
 export class PaymentService {

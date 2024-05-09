@@ -11,7 +11,7 @@ import {
   Req,
   Res,
   UploadedFile,
-  UseInterceptors,
+  // UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { VideosService } from './videos.service';
@@ -26,6 +26,7 @@ import {
   ReplaceSingleVideoDTO,
   UpLoadVideoDTO,
 } from './videos.dto';
+import { UseInterceptors } from '@nestjs/common/decorators/core/use-interceptors.decorator';
 
 @Controller('videos')
 @ApiTags('Videos')

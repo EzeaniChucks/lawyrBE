@@ -10,7 +10,7 @@ import {
   Req,
   Res,
   UploadedFile,
-  UseInterceptors,
+  // UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
@@ -24,6 +24,7 @@ import {
   EditSingleDocx_pdfNameDTO,
   ReplaceSingleDocx_pdfDTO,
 } from './books.dto';
+import { UseInterceptors } from '@nestjs/common/decorators/core/use-interceptors.decorator';
 
 @Controller('docx_pdfs')
 @ApiTags('Books')
