@@ -88,12 +88,20 @@ export class ContentsService {
       resourceName: string;
       resourceType: string;
       resourceId: string;
-      resourceParentIds: string;
+      resourceParentIds: string[];
     },
     destination: 'subscriptions array' | 'purchases array' | 'cart array',
     res: Response,
   ) {
     try {
+      const namecheck = ['flashcard', 'mcq', 'video', 'audio', 'essay', 'pdf'];
+      if (!namecheck.includes(item?.resourceName)) {
+        return res.status(400).json({
+          msg: 'unccessful',
+          payload:
+            'You sent the wrong data for resource name. Enums are flashcard, mcq, video, audio, essay, pdf',
+        });
+      }
       //check if item is already in cart
       let checkusercart = await this.auth.findOne({
         _id: userId,
@@ -134,14 +142,12 @@ export class ContentsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
+
   //removes a resource or folder to the user cart, purchases or subscriptions records
   async removeItemFromUserAssets(
     userId: string,
     item: {
-      resourceName: string;
-      resourceType: string;
       resourceId: string;
-      resourceParentIds: string;
     },
     destination: 'subscriptions array' | 'purchases array' | 'cart array',
     res: Response,
@@ -240,10 +246,18 @@ export class ContentsService {
     }
   }
   async doesResourceExistSomewhereElse(
-    resourceId: string | undefined,
+    resourceId: string,
     resourceName: string,
     res: Response,
   ) {
+    const namecheck = ['flashcard', 'mcq', 'video', 'audio', 'essay', 'pdf'];
+    if (!namecheck.includes(resourceName)) {
+      return res.status(400).json({
+        msg: 'unccessful',
+        payload:
+          'You sent the wrong data for resource name. Enums are flashcard, mcq, video, audio, essay, pdf',
+      });
+    }
     try {
       if (resourceName !== 'folder') {
         let alreadyexists = null;
@@ -327,11 +341,20 @@ export class ContentsService {
     }
   }
   async canResourceBeDeleted(
-    resourceId: string | undefined,
+    resourceId: string,
     resourceName: string,
     res: Response,
   ) {
     try {
+      const namecheck = ['flashcard', 'mcq', 'video', 'audio', 'essay', 'pdf'];
+      if (!namecheck.includes(resourceName)) {
+        return res.status(400).json({
+          msg: 'unccessful',
+          payload:
+            'You sent the wrong data for resource name. Enums are flashcard, mcq, video, audio, essay, pdf',
+        });
+      }
+
       if (resourceName !== 'folder') {
         let can_resource_be_deleted = true;
         let amount_of_subscribers = 0;
@@ -468,12 +491,22 @@ export class ContentsService {
       return res.status(500).json({ msg: err.message });
     }
   }
+
   async canUserAccessResource(
-    resourceId: string | undefined,
+    resourceId: string,
     resourceName: string,
     userId: string,
     res: Response,
   ) {
+    const namecheck = ['flashcard', 'mcq', 'video', 'audio', 'essay', 'pdf'];
+    if (!namecheck.includes(resourceName)) {
+      return res.status(400).json({
+        msg: 'unccessful',
+        payload:
+          'You sent the wrong data for resource name. Enums are flashcard, mcq, video, audio, essay, pdf',
+      });
+    }
+
     try {
       if (resourceName !== 'folder') {
         let can_user_access_resource = false;

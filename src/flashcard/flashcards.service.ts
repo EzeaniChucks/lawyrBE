@@ -32,7 +32,7 @@ export class FlashCardsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-  async getFlashCard(cardId: cardIdDTO, res: Response) {
+  async getFlashCard(cardId: string, res: Response) {
     try {
       const flashcard = await this.flashcards.findOne({ _id: cardId });
       return res.status(200).json({ msg: 'success', payload: flashcard });
@@ -79,7 +79,7 @@ export class FlashCardsService {
       res.status(500).json({ msg: err?.message });
     }
   }
-  async deleteFlashCard(flashcardId: cardIdDTO, req: Request, res: Response) {
+  async deleteFlashCard(flashcardId: string, req: Request, res: Response) {
     try {
       const canDelete = await canDeleteResource(
         this.flashcards,

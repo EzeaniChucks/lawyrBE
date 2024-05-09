@@ -12,15 +12,16 @@ import {
 import { PaymentService } from './payment.service';
 import { Response, query, response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
+import { ChargeUserWalletDTO, PayStackPaymentResponseDTO } from './payment.dto';
 
 @Controller('wallet')
-@ApiTags('Wallet and payment')
+@ApiTags('Payment')
 export class PaymentController {
   constructor(private readonly paymentservice: PaymentService) {}
   //flutterwave
   @Get('response')
   async paymentresponse(
-    @Query('transaction_id') transaction_id: string | number,
+    @Query('transaction_id') transaction_id: string,
     @Query('description') description: string,
   ) {
     return await this.paymentservice.paymentresponse(
@@ -32,41 +33,32 @@ export class PaymentController {
   @Post('paystack_payment_response')
   async payStackPaymentResponse(
     @Body()
-    body: {
-      reference: string;
-      status: string;
-      transactionId: string;
-      trxref: string;
-    },
+    body: PayStackPaymentResponseDTO,
     @Res() res: Response,
   ) {
-    const { reference, status, transactionId, trxref } = body;
+    const { reference } = body;
     return await this.paymentservice.payStackPaymentResponse(
-      { reference, status, transactionId, trxref },
+      { reference },
       res,
     );
   }
 
   //in-app
   @Get('/:userId/get_wallet_balance')
-  async getUserBalance(@Param() allParams: any, @Res() res: Response) {
-    const { userId } = allParams;
+  async getUserBalance(@Param('userId') userId: string, @Res() res: Response) {
     return await this.paymentservice.getUserBalance(userId, res);
   }
 
   //in-app
   @Post('/charge_user_wallet')
-  async chargeWallet(
-    @Body() body: { userId: string; amount: number },
-    @Res() res: Response,
-  ) {
+  async chargeWallet(@Body() body: ChargeUserWalletDTO, @Res() res: Response) {
     const { userId, amount } = body;
     return await this.paymentservice.chargeWallet(userId, amount, res);
   }
 
   //in-app
   @Get('latest_transactions/:userId')
-  latestTransactions(@Param('userId') userId: string | number) {
+  latestTransactions(@Param('userId') userId: string) {
     return this.paymentservice.latestTransactions(userId);
   }
 

@@ -30,6 +30,7 @@ export const transactionSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'phone number is required'],
     },
+    isInflow: { type: Boolean, default: false },
     currency: {
       type: String,
       required: [true, 'currency is required'],

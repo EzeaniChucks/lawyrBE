@@ -13,7 +13,21 @@ import {
 } from '@nestjs/common';
 import { ContentsService } from './contents.service';
 import { Request, Response } from 'express';
-import { Contents, FullContentsDetails } from './contents.dto';
+import {
+  AddItemToUserAssetDTO,
+  AddParentIDsToResourceDTO,
+  CanResourceBeDeletedDTO,
+  CanUserAccessResourceDTO,
+  Contents,
+  DoesResourceExistSomewhereElseDTO,
+  FullContentsDetails,
+  MonifyResourceDTO,
+  RemoveParentIDsFromResourceDTO,
+  UnMonifyResourceDTO,
+  adduserIdsToResourcePaymentArraysDTO,
+  isUserSubActiveDTO,
+  removeItemsFromUserAssetDTO,
+} from './contents.dto';
 import mongoose from 'mongoose';
 import { ApiTags } from '@nestjs/swagger';
 
@@ -30,6 +44,7 @@ export class ContentsController {
     }
     return idsArray;
   }
+
   @Post('create_super_folder')
   async createcontent(
     @Body()
@@ -44,14 +59,17 @@ export class ContentsController {
       res,
     );
   }
+
   @Get('get_all_contents')
   async getAllContents() {
     return this.contentservice.getAllContents();
   }
+
   @Get('get_single_content/:superFolderId')
   async getSingleContents(@Param('superFolderId') superFolderId: string) {
     return this.contentservice.getSingleContent({ superFolderId });
   }
+
   @Put('update_single_content')
   async updateSuperFolder(
     @Body() superFolder: FullContentsDetails,
@@ -60,19 +78,11 @@ export class ContentsController {
   ) {
     return this.contentservice.updateSuperFolder(superFolder, req, res);
   }
+
   @Put('add_item_to_user_assets')
   async addItemToUserAssets(
     @Body()
-    body: {
-      userId: string;
-      item: {
-        resourceName: string;
-        resourceType: string;
-        resourceId: string;
-        resourceParentIds: string;
-      };
-      destination: 'subscriptions array' | 'purchases array' | 'cart array';
-    },
+    body: AddItemToUserAssetDTO,
     @Res() res: Response,
     @Req() req: Request,
   ) {
@@ -84,19 +94,11 @@ export class ContentsController {
       res,
     );
   }
+
   @Put('remove_item_from_user_assets')
   async removeItemFromUserAssets(
     @Body()
-    body: {
-      userId: string;
-      item: {
-        resourceName: string;
-        resourceType: string;
-        resourceId: string;
-        resourceParentIds: string;
-      };
-      destination: 'subscriptions array' | 'purchases array' | 'cart array';
-    },
+    body: removeItemsFromUserAssetDTO,
     @Res() res: Response,
     @Req() req: Request,
   ) {
@@ -119,10 +121,11 @@ export class ContentsController {
       res,
     );
   }
+
   @Post('does_resource_exist')
   async doesResourceExistSomewhereElse(
     @Body()
-    body: { resourceId: string | undefined; resourceName: string },
+    body: DoesResourceExistSomewhereElseDTO,
     @Res() res: Response,
   ) {
     const { resourceId, resourceName } = body;
@@ -136,7 +139,7 @@ export class ContentsController {
   @Post('can_resource_be_deleted')
   async canResourceBeDeleted(
     @Body()
-    body: { resourceId: string | undefined; resourceName: string },
+    body: CanResourceBeDeletedDTO,
     @Res() res: Response,
   ) {
     const { resourceId, resourceName } = body;
@@ -160,11 +163,7 @@ export class ContentsController {
   @Post('can_user_access_resource')
   async canUserAccessResource(
     @Body()
-    body: {
-      resourceId: string | undefined;
-      resourceName: string;
-      userId: string;
-    },
+    body: CanUserAccessResourceDTO,
     @Res() res: Response,
   ) {
     const { resourceId, resourceName, userId } = body;
@@ -178,12 +177,7 @@ export class ContentsController {
   @Post('is_user_sub_active')
   async isUserSubActive(
     @Body()
-    body: {
-      contentId: string;
-      userId: string;
-      resourceName: string;
-      resourceId: string;
-    },
+    body: isUserSubActiveDTO,
     @Res() res: Response,
   ) {
     const { resourceId, resourceName, userId, contentId } = body;
@@ -199,19 +193,16 @@ export class ContentsController {
   @Put('add_parent_ids_to_resource')
   async addParentIdsToResource(
     @Body()
-    body: {
-      resourceName: string;
-      resourceId: string;
-      parentIdsArray: string[];
-    },
+    body: AddParentIDsToResourceDTO,
     @Res() res: Response,
     @Req() req: Request,
   ) {
     return this.contentservice.addParentIdsToResource({ ...body, req, res });
   }
+
   @Put('remove_parent_ids_from_resource')
   async removeParentIdsFromResource(
-    @Body() body: { resourceName: string; resourceId: string },
+    @Body() body: RemoveParentIDsFromResourceDTO,
     @Res() res: Response,
     @Req() req: Request,
   ) {
@@ -225,18 +216,7 @@ export class ContentsController {
   @Put('monify_resource')
   async monifyResource(
     @Body()
-    body: {
-      resourceName: string;
-      resourceId: string;
-      settingsObj: {
-        purchasePrice?: number;
-        subscriptionPrice?: number;
-        subscriptionDurationNo?: number;
-        subscriptionDurationUnit?: string;
-        isSubscription: boolean;
-        isPurchase: boolean;
-      };
-    },
+    body: MonifyResourceDTO,
     @Res() res: Response,
     @Req() req: Request,
   ) {
@@ -253,14 +233,7 @@ export class ContentsController {
   @Put('add_userIds_to_resource_payment_arrays')
   async adduserIdsToResourcePaymentArrays(
     @Body()
-    body: {
-      resourceName: string;
-      resourceId: string;
-      settingsObj: {
-        subscribedUsersIds: { userName: string; userId: string };
-        paidUsersIds: { userName: string; userId: string };
-      };
-    },
+    body: adduserIdsToResourcePaymentArraysDTO,
     @Res() res: Response,
   ) {
     const { resourceName, resourceId, settingsObj } = body;
@@ -274,7 +247,7 @@ export class ContentsController {
 
   @Put('unmonify_resource')
   async umonifyResource(
-    @Body() body: { resourceName: string; resourceId: string },
+    @Body() body: UnMonifyResourceDTO,
     @Res() res: Response,
     @Req() req: Request,
   ) {

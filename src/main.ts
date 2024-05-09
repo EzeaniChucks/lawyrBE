@@ -13,8 +13,19 @@ async function bootstrap() {
     .setTitle('Lawyr API documentation')
     .setDescription('Routes for Lawyr App')
     .setVersion('1.0')
-    .addTag('Lawyr exams prep platform')
-    .addBearerAuth()
+    .addTag('Admin', 'Admin Routes')
+    .addTag('Audios', 'Audios Routes')
+    .addTag('Auth', 'Auth Routes')
+    .addTag('Books', 'Books Routes')
+    .addTag('Contents', 'Contents Routes')
+    .addTag('Essays', 'Essays Routes')
+    .addTag('FlashCards', 'FlashCards Routes')
+    // .addTag('GroupTests', 'GroupTests Routes')
+    .addTag('Invitations', 'Invitation Routes')
+    .addTag('MCQs', 'MCQs Routes')
+    .addTag('Payment', 'Payment Routes')
+    .addTag('Videos', 'Videos Routes')
+    .addBearerAuth({ type: 'apiKey', in: 'cookie', name: 'accessToken' })
     .build();
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api', app, document);

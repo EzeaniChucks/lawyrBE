@@ -16,10 +16,16 @@ import {
   mcqBodyANDDetails,
   mcqDetailsDTO,
 } from 'src/mcqs/mcqs.dto';
+import * as emailjs from '@emailjs/nodejs';
+import cryptos from 'crypto';
+import { PaymentService } from 'src/paymentModule/payment.service';
 
 @Injectable()
 export class AuthService {
-  constructor(@InjectModel('auths') private readonly user: Model<any>) {}
+  constructor(
+    @InjectModel('auths') private readonly user: Model<any>,
+    private readonly paymentservice: PaymentService,
+  ) {}
 
   async isLoggedIn(req: Request, res: Response) {
     try {
@@ -33,6 +39,7 @@ export class AuthService {
       res.status(500).json(false);
     }
   }
+
   async isAdmin(req: Request, res: Response) {
     try {
       const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
@@ -45,6 +52,7 @@ export class AuthService {
       res.status(500).json(false);
     }
   }
+
   async getFullUserDetails(req: Request, res: Response) {
     try {
       const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
@@ -98,6 +106,7 @@ export class AuthService {
       return res.status(500).json({ msg: err?.message });
     }
   }
+
   async register(body: RegisterDTO, res: Response) {
     const { email, password, firstName, lastName } = body;
     try {
@@ -127,6 +136,117 @@ export class AuthService {
       return res.status(500).json({ msg: err?.message });
     }
   }
+
+  async sendResetPassToEmail(email: string, res: Response) {
+    try {
+      const useremail = await this.user.findOne({ email });
+      if (!useremail) {
+        return res.status(400).json({
+          msg: 'This user email does not exist. Please go back and register afresh',
+        });
+      }
+      const resetToken = cryptos.randomBytes(40).toString('hex');
+      const tokenifiedUser = await this.user.findOneAndUpdate(
+        { email },
+        { $set: { verificationToken: resetToken } },
+        { new: true },
+      );
+      if (!tokenifiedUser) {
+        return res.status(400).json({
+          msg: 'Token could not be generated. Contact customer care with this error',
+        });
+      }
+
+      emailjs
+        .send(
+          'service_n45yy8t',
+          'template_22ku158',
+          {
+            name: `${tokenifiedUser?.firstName} ${tokenifiedUser?.lastName}`,
+            email: `${tokenifiedUser.email}`,
+            // email: 'testingtestguy1@gmail.com',
+            message: `
+                    <div>
+                      <h4>CharityOrg Account Password reset</h4>
+                      <h5>Click on the button below to reset your password</h5>
+                      <button><a style='padding:5px; border-radius:10px;' href='${process.env.FRONT_END_CONNECTION}/resetPassword?verificationToken=${resetToken}&email=${tokenifiedUser?.email}'>Reset Password</a></button>
+                      </div>
+                  `,
+          },
+          {
+            publicKey: '7UpYhI4ulL04ybL_j',
+            privateKey: 't-HI5fwlLdMx_qOM7QfRx',
+          },
+        )
+        .then(
+          (response) => {
+            return res.status(200).json({
+              msg: `success! we sent an email to you at ${tokenifiedUser.email}. Please visit to reset your password`,
+              payload: response,
+            });
+          },
+          (err) => {
+            return res.status(400).json({ msg: 'unsuccessful', payload: err });
+          },
+        );
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
+
+  async resetPassword(
+    resetToken: string,
+    email: string,
+    password: string,
+    res: Response,
+  ) {
+    try {
+      const user = await this.user.findOne({ email });
+      if (!user) {
+        return res.status(400).json({
+          msg: 'No user with this email. Please try registering',
+        });
+      }
+      if (user.verificationToken !== resetToken) {
+        return res.status(400).json({
+          msg: 'false or expired token',
+        });
+      }
+      const salt = await bcrypt.genSalt(10);
+      const hashedpass = await bcrypt.hash(password, salt);
+
+      user.password = hashedpass;
+      user.isVerified = true;
+      user.verified = Date.now();
+      user.verificationToken = '';
+      await user.save();
+
+      const { _id, firstName, lastName, phoneNumber, isVerified, isAdmin } =
+        user;
+      await this.paymentservice.validateUserWallet(_id);
+      await attachCookiesToResponse(res, {
+        _id,
+        firstName,
+        lastName,
+        phoneNumber,
+        isAdmin,
+        assets: [{ subscriptions: [], purchases: [], cart: [] }],
+      });
+      return res.status(200).json({
+        msg: 'password reset successful',
+        user: {
+          _id,
+          email: user.email,
+          firstName,
+          lastName,
+          phoneNumber,
+        },
+      });
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
+
   async signout(res: Response) {
     try {
       res.cookie(
@@ -144,6 +264,7 @@ export class AuthService {
       return res.status(500).json({ mag: err?.message });
     }
   }
+
   async startMCQTest(
     userId: string,
     mcq: {
@@ -152,7 +273,7 @@ export class AuthService {
       mcqDetails: mcqDetailsDTO;
       QAs: MCQuestionsDTO[];
       scenarios: MCQScenarios[];
-      expiryDate: Date;
+      expiryDate: String;
     },
     res: Response,
   ) {
@@ -189,6 +310,7 @@ export class AuthService {
       return res.status(500).json({ msg: err.message });
     }
   }
+
   async fetchCurrentOngoingMCQ(userId: string, mcqId: string, res: Response) {
     try {
       const userobj = await this.user.findOne({ _id: userId });
@@ -210,12 +332,13 @@ export class AuthService {
       return res.status(500).json({ msg: err.message });
     }
   }
+
   async fetchAllCompletedMCQs(userId: string, res: Response) {
     try {
       const userobj = await this.user.findOne({ _id: userId });
       let fakedate: number = 0;
       const allMCQs = userobj.mcqs.map((each: any) => {
-        fakedate++
+        fakedate++;
         return {
           mcqDetails: each?.mcqDetails,
           _id: each?._id,
@@ -240,12 +363,13 @@ export class AuthService {
       return res.status(500).json({ msg: err.message });
     }
   }
+
   async fetchAllCompletedGroupTests(userId: string, res: Response) {
     try {
       const userobj = await this.user.findOne({ _id: userId });
-      let fakedate:number = 0
+      let fakedate: number = 0;
       const allMCQs = userobj.groupMcqs.map((each: any) => {
-        fakedate++
+        fakedate++;
         return {
           mcqDetails: each?.mcqDetails,
           _id: each?._id,
@@ -390,7 +514,7 @@ export class AuthService {
       mcqDetails: mcqDetailsDTO;
       QAs: MCQuestionsDTO[];
       scenarios: MCQScenarios[];
-      expiryDate: Date;
+      expiryDate: String;
     },
     res: Response,
   ) {

@@ -18,23 +18,26 @@ import { VideosService } from './videos.service';
 import { Request, Response, query } from 'express';
 import { File } from 'buffer';
 import { ApiTags } from '@nestjs/swagger';
+import {
+  DeleteEntireVideoGroupDTO,
+  DeleteSingleVideoDTO,
+  EditSingleVideoNameDTO,
+  EditVideoDetailsDTO,
+  ReplaceSingleVideoDTO,
+  UpLoadVideoDTO,
+} from './videos.dto';
 
 @Controller('videos')
 @ApiTags('Videos')
 export class VideosController {
   constructor(private readonly videoservice: VideosService) {}
+
   @Post('upload_video')
   @UseInterceptors(FileInterceptor('videoFile'))
   async uploadVideo(
     @UploadedFile() file: any,
     @Body()
-    body: {
-      name: string;
-      parentId: string;
-      videoActionType: string;
-      title: string;
-      description: string;
-    },
+    body: UpLoadVideoDTO,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -42,7 +45,7 @@ export class VideosController {
       return res.status(400).json('No file uploaded');
     }
     const { name, videoActionType, parentId, title, description } = body;
-    // console.log(name, videoActionType, parentId, title, description);
+
     return this.videoservice.uploadVideo(
       file,
       parentId,
@@ -53,6 +56,7 @@ export class VideosController {
       res,
     );
   }
+
   @Get('get_all_video_groups')
   async getAllVideos() {
     return this.videoservice.getAllVideoGroups();
@@ -68,11 +72,7 @@ export class VideosController {
   async ReplaceVideo(
     @UploadedFile() file: File,
     @Body()
-    body: {
-      name: string;
-      parentId: string;
-      oldVideoId: string;
-    },
+    body: ReplaceSingleVideoDTO,
     @Res() res: Response,
   ) {
     if (!file) {
@@ -91,11 +91,7 @@ export class VideosController {
   @Put('edit_single_video_name')
   async editSingleVideoName(
     @Body()
-    body: {
-      name: string;
-      parentId: string;
-      singleVideoId: string;
-    },
+    body: EditSingleVideoNameDTO,
     @Res() res: Response,
   ) {
     const { parentId, singleVideoId, name } = body;
@@ -110,11 +106,7 @@ export class VideosController {
   @Put('edit_video_details')
   async editVideoDetails(
     @Body()
-    body: {
-      title: string;
-      description: string;
-      parentId: string;
-    },
+    body: EditVideoDetailsDTO,
     @Res() res: Response,
   ) {
     const { parentId, title, description } = body;
@@ -125,13 +117,11 @@ export class VideosController {
       res,
     });
   }
+
   @Delete('delete_single_video')
   async deleteSingleVideo(
     @Query()
-    query: {
-      parentId: string;
-      videoId: string;
-    },
+    query: DeleteSingleVideoDTO,
     @Res() res: Response,
   ) {
     const { parentId, videoId } = query;
@@ -145,9 +135,7 @@ export class VideosController {
   @Delete('delete_entire_video_group/:parentVideoId')
   async deleteEntireVideoGroup(
     @Param()
-    param: {
-      parentVideoId: string;
-    },
+    param: DeleteEntireVideoGroupDTO,
     @Res() res: Response,
   ) {
     const { parentVideoId } = param;

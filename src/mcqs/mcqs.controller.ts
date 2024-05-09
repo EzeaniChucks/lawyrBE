@@ -12,16 +12,28 @@ import {
 import { Request, Response } from 'express';
 import { cardBody, cardIdDTO } from 'src/flashcard/flashcards.dto';
 import { McqsService } from './mcqs.service';
-import { mcqBodyANDDetails, mcqIdDTO } from './mcqs.dto';
+import {
+  CreateAGroupTest,
+  CreateMCQDTO,
+  DeleteAGroupTest,
+  EndAGroupTest,
+  FetchAGroupTest,
+  InviteUsersToGroupTest,
+  UpdateMCQDTO,
+  ViewResultsWithCorrections,
+  mcqBodyANDDetails,
+  mcqIdDTO,
+} from './mcqs.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @Controller('mcqs')
 @ApiTags('MCQs')
 export class McqsController {
   constructor(private readonly mcqservice: McqsService) {}
+
   @Post('create_mcq')
   async createMCQ(
-    @Body() body: mcqBodyANDDetails,
+    @Body() body: CreateMCQDTO,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -31,12 +43,14 @@ export class McqsController {
 
   @Get('get_mcq/:mcqId')
   async getMCQ(
-    @Param('mcqId') mcqId: mcqIdDTO,
+    @Param() param: mcqIdDTO,
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    const { mcqId } = param;
     return await this.mcqservice.getMCQ(mcqId, res);
   }
+
   @Get('get_all_mcqs')
   async getAllMCQs(@Req() req: Request, @Res() res: Response) {
     return await this.mcqservice.getAllMCQs(req, res);
@@ -44,7 +58,7 @@ export class McqsController {
 
   @Put('update_mcq')
   async updateMCQ(
-    @Body() body: { mcqId: mcqIdDTO; mcqBEObject: mcqBodyANDDetails },
+    @Body() body: UpdateMCQDTO,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -55,31 +69,33 @@ export class McqsController {
 
   @Delete('delete_mcq/:mcqId')
   async deleteMCQ(
-    @Param('mcqId') mcqId: mcqIdDTO,
+    @Param() param: mcqIdDTO,
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    const { mcqId } = param;
     return await this.mcqservice.deleteMCQ(mcqId, req, res);
   }
 
   @Post('create_a_group_test')
-  async createAGroupTest(@Body() body: any, @Res() res: Response) {
+  async createAGroupTest(
+    @Body()
+    body: CreateAGroupTest,
+    @Res() res: Response,
+  ) {
     const { testObj } = body;
     return await this.mcqservice.createAGroupTest(testObj, res);
   }
 
   @Get('fetch_a_group_test/:grouptestId/:userId')
-  async fetchAGroupTest(
-    @Param() param: { grouptestId: mcqIdDTO; userId: string },
-    @Res() res: Response,
-  ) {
+  async fetchAGroupTest(@Param() param: FetchAGroupTest, @Res() res: Response) {
     const { grouptestId, userId } = param;
     return await this.mcqservice.fetchAGroupTest(grouptestId, userId, res);
   }
 
   @Delete('delete_a_group_test/:grouptestId/:userId')
   async deleteAGroupTest(
-    @Param() param: { grouptestId: mcqIdDTO; userId: string },
+    @Param() param: DeleteAGroupTest,
     @Res() res: Response,
   ) {
     const { grouptestId, userId } = param;
@@ -87,10 +103,7 @@ export class McqsController {
   }
 
   @Put('end_a_group_test')
-  async endAGroupTest(
-    @Body() body: { grouptestId: mcqIdDTO },
-    @Res() res: Response,
-  ) {
+  async endAGroupTest(@Body() body: EndAGroupTest, @Res() res: Response) {
     const { grouptestId } = body;
     return await this.mcqservice.endAGroupTest(grouptestId, res);
   }
@@ -105,16 +118,11 @@ export class McqsController {
       res,
     );
   }
+
   @Post('invite_users_to_group_test')
   async inviteFriendsToGroupTest(
     @Body()
-    body: {
-      inviteesIdArrays: { userId: string; userName: string }[];
-      originalmcqId: string;
-      grouptestId: string;
-      folderId: string;
-      folderName: string;
-    },
+    body: InviteUsersToGroupTest,
     @Res() res: Response,
   ) {
     const {
@@ -133,13 +141,11 @@ export class McqsController {
       res,
     );
   }
+
   @Get('view_results_with_corrections/:grouptestId/:userId')
   async viewResultsWithCorrections(
     @Param()
-    param: {
-      grouptestId: string;
-      userId: string;
-    },
+    param: ViewResultsWithCorrections,
     @Res() res: Response,
   ) {
     const { grouptestId, userId } = param;

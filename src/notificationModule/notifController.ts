@@ -2,13 +2,14 @@ import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { NotifService } from './notifService';
 import { ApiTags } from '@nestjs/swagger';
+import { GetNotifId, MarkMessageAsRead } from './notification.dto';
 
 @Controller('notifications')
 @ApiTags('Notifications')
 export class NotifController {
   constructor(private readonly notificationservice: NotifService) {}
   @Post('mark_message_as_read')
-  markAsRead(@Body() body: any) {
+  markAsRead(@Body() body: MarkMessageAsRead) {
     const { messageId, userId } = body;
     return this.notificationservice.markAsChecked(messageId, userId);
   }
@@ -22,7 +23,8 @@ export class NotifController {
   // }
 
   @Get('get_notifications/:userId')
-  getNotifications(@Param('userId') userId: string) {
+  getNotifications(@Param() param: GetNotifId) {
+    const { userId } = param;
     return this.notificationservice.getNotifications(userId);
   }
 }

@@ -47,7 +47,7 @@ export class McqsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-  async getMCQ(mcqId: mcqIdDTO, res: Response) {
+  async getMCQ(mcqId: string, res: Response) {
     try {
       const mcqs = await this.mcqs
         .findOne({ _id: mcqId })
@@ -68,7 +68,7 @@ export class McqsService {
     }
   }
   async updateMCQ(
-    mcqId: mcqIdDTO,
+    mcqId: string,
     details: mcqDetailsDTO,
     mcqBody: MCQBodyDTO,
     req: Request,
@@ -98,7 +98,7 @@ export class McqsService {
       res.status(500).json({ msg: err?.message });
     }
   }
-  async deleteMCQ(mcqId: mcqIdDTO, req: Request, res: Response) {
+  async deleteMCQ(mcqId: string, req: Request, res: Response) {
     try {
       const canDelete = await canDeleteResource(
         this.mcqs,
@@ -126,7 +126,24 @@ export class McqsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-  async createAGroupTest(testObj: any, res: Response) {
+
+  async createAGroupTest(
+    testObj: {
+      numberOfQuestions: number;
+      numberOfScenarios: number;
+      creatorId: string;
+      details: { title: string; description: string };
+      testParticipantsIds: { userId: string; userName: string }[];
+      initialTestParticipants: {
+        userId: string;
+        userName: string;
+        canTakeTest: boolean;
+      }[];
+      clonedresourceId: string;
+      testStartTimeMilliseconds: number;
+    },
+    res: Response,
+  ) {
     const {
       numberOfQuestions,
       numberOfScenarios,
@@ -172,12 +189,15 @@ export class McqsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-  async fetchAGroupTest(grouptestId: mcqIdDTO, userId: string, res: Response) {
+
+  async fetchAGroupTest(grouptestId: string, userId: string, res: Response) {
     try {
       const ongoingTest = await this?.grouptests?.findOne({
         _id: grouptestId,
       });
+
       let userCanFetchTest = false;
+
       ongoingTest?.initialTestParticipants?.map(
         (each: { userId: string; canTakeTest: boolean }) => {
           if (each?.userId?.toString() === userId) {
@@ -186,6 +206,7 @@ export class McqsService {
           return;
         },
       );
+
       if (!userCanFetchTest) {
         return res
           ?.status(400)
@@ -263,7 +284,7 @@ export class McqsService {
       return res?.status(500)?.json({ msg: err?.message });
     }
   }
-  async endAGroupTest(groupTestId: mcqIdDTO, res: Response) {
+  async endAGroupTest(groupTestId: string, res: Response) {
     try {
       const updatedTest = await this.grouptests.findOneAndUpdate(
         { _id: groupTestId },
@@ -278,7 +299,7 @@ export class McqsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-  async deleteAGroupTest(groupTestId: mcqIdDTO, userId: string, res: Response) {
+  async deleteAGroupTest(groupTestId: string, userId: string, res: Response) {
     try {
       const group = await this.grouptests.findOne({
         _id: groupTestId,

@@ -45,6 +45,7 @@ export class CloudinaryService {
     );
     return result;
   }
+
   async uploadAudio(
     file: any,
   ): Promise<UploadApiResponse | UploadApiErrorResponse> {
@@ -86,6 +87,7 @@ export class CloudinaryService {
     );
     return result;
   }
+
   async uploadPdf(
     file: any,
   ): Promise<UploadApiResponse | UploadApiErrorResponse> {
@@ -115,6 +117,7 @@ export class CloudinaryService {
     );
     return result;
   }
+
   async uploadDoc(
     file: any,
   ): Promise<UploadApiResponse | UploadApiErrorResponse> {

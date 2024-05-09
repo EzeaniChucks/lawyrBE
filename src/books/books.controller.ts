@@ -17,9 +17,16 @@ import { Request, Response } from 'express';
 import { Docx_pdfsService } from './books.service';
 import { File } from 'buffer';
 import { ApiTags } from '@nestjs/swagger';
+import {
+  DeleteSingleDocx_pdfDTO,
+  Docx_pdfDetailsDTO,
+  EditSingleDocx_pdfDetailsDTO,
+  EditSingleDocx_pdfNameDTO,
+  ReplaceSingleDocx_pdfDTO,
+} from './books.dto';
 
 @Controller('docx_pdfs')
-@ApiTags('Docx_pdfs')
+@ApiTags('Books')
 export class Docx_pdfsController {
   constructor(private readonly docx_pdfservice: Docx_pdfsService) {}
   @Post('upload_docx_pdf')
@@ -27,10 +34,7 @@ export class Docx_pdfsController {
   async uploadDocx_pdf(
     @UploadedFile() file: File,
     @Body()
-    body: {
-      title: string;
-      description: string;
-    },
+    body: Docx_pdfDetailsDTO,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -45,24 +49,23 @@ export class Docx_pdfsController {
       res,
     );
   }
+
   @Get('get_all_docx_pdfs')
   async getAlldocx_pdfs() {
     return this.docx_pdfservice.getAllDocx_pdfs();
   }
+
   @Get('get_single_docx_pdf/:docx_pdfId')
   async getSingledocx_pdf(@Param('docx_pdfId') docx_pdfId: string) {
     return this.docx_pdfservice.getSingleDocx_pdf(docx_pdfId);
   }
+
   @Put('replace_single_docx_pdf')
   @UseInterceptors(FileInterceptor('docx_pdfFile'))
   async ReplaceSingleDocx_pdf(
     @UploadedFile() file: File,
     @Body()
-    body: {
-      name: string;
-      parentId: string;
-      olddocx_pdfId: string;
-    },
+    body: ReplaceSingleDocx_pdfDTO,
     @Res() res: Response,
   ) {
     if (!file) {
@@ -77,14 +80,11 @@ export class Docx_pdfsController {
       res,
     });
   }
+
   @Put('edit_single_docx_pdf_name')
   async editSingleDocx_pdfName(
     @Body()
-    body: {
-      name: string;
-      parentId: string;
-      singledocx_pdfId: string;
-    },
+    body: EditSingleDocx_pdfNameDTO,
     @Res() res: Response,
   ) {
     const { parentId, singledocx_pdfId, name } = body;
@@ -95,14 +95,11 @@ export class Docx_pdfsController {
       res,
     });
   }
+
   @Put('edit_docx_pdf_details')
   async editDocx_pdfDetails(
     @Body()
-    body: {
-      title: string;
-      description: string;
-      parentId: string;
-    },
+    body: EditSingleDocx_pdfDetailsDTO,
     @Res() res: Response,
   ) {
     const { parentId, title, description } = body;
@@ -113,13 +110,11 @@ export class Docx_pdfsController {
       res,
     });
   }
+
   @Delete('delete_single_docx_pdf')
   async deleteSingleDocx_pdf(
     @Query()
-    query: {
-      parentId: string;
-      docx_pdfId: string;
-    },
+    query: DeleteSingleDocx_pdfDTO,
     @Res() res: Response,
   ) {
     const { parentId, docx_pdfId } = query;

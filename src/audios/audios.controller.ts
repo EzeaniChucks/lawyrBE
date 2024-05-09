@@ -17,9 +17,17 @@ import { Request, Response } from 'express';
 import { AudiosService } from './audios.service';
 import { File } from 'buffer';
 import { ApiTags } from '@nestjs/swagger';
+import {
+  DeleteEntireAudioGroupDTO,
+  DeleteSingleAudioDTO,
+  EditAudioDetailsDTO,
+  EditSingleAudioNameDTO,
+  ReplaceSingleAudiosDTO,
+  UploadAudiosDTO,
+} from './audios.dto';
 
 @Controller('audios')
-@ApiTags('Audio')
+@ApiTags('Audios')
 export class AudiosController {
   constructor(private readonly audioservice: AudiosService) {}
   @Post('upload_audio')
@@ -27,13 +35,7 @@ export class AudiosController {
   async uploadAudio(
     @UploadedFile() file: File,
     @Body()
-    body: {
-      name: string;
-      parentId: string;
-      audioActionType: string;
-      title: string;
-      description: string;
-    },
+    body: UploadAudiosDTO,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -51,24 +53,23 @@ export class AudiosController {
       res,
     );
   }
+
   @Get('get_all_audio_groups')
   async getAllAudioGroups() {
     return this.audioservice.getAllAudioGroups();
   }
+
   @Get('get_single_audio_group/:audioId')
   async getSingleAudioGroup(@Param('audioId') audioId: string) {
     return this.audioservice.getSingleAudioGroup(audioId);
   }
+
   @Put('replace_single_audio')
   @UseInterceptors(FileInterceptor('audioFile'))
   async ReplaceSingleAudio(
     @UploadedFile() file: File,
     @Body()
-    body: {
-      name: string;
-      parentId: string;
-      oldAudioId: string;
-    },
+    body: ReplaceSingleAudiosDTO,
     @Res() res: Response,
   ) {
     if (!file) {
@@ -83,14 +84,11 @@ export class AudiosController {
       res,
     });
   }
+
   @Put('edit_single_audio_name')
   async editSingleAudioName(
     @Body()
-    body: {
-      name: string;
-      parentId: string;
-      singleAudioId: string;
-    },
+    body: EditSingleAudioNameDTO,
     @Res() res: Response,
   ) {
     const { parentId, singleAudioId, name } = body;
@@ -101,14 +99,11 @@ export class AudiosController {
       res,
     });
   }
+
   @Put('edit_audio_details')
   async editAudioDetails(
     @Body()
-    body: {
-      title: string;
-      description: string;
-      parentId: string;
-    },
+    body: EditAudioDetailsDTO,
     @Res() res: Response,
   ) {
     const { parentId, title, description } = body;
@@ -119,13 +114,11 @@ export class AudiosController {
       res,
     });
   }
+
   @Delete('delete_single_audio')
   async deleteSingleAudio(
     @Query()
-    query: {
-      parentId: string;
-      audioId: string;
-    },
+    query: DeleteSingleAudioDTO,
     @Res() res: Response,
   ) {
     const { parentId, audioId } = query;
@@ -135,12 +128,11 @@ export class AudiosController {
       res,
     });
   }
+
   @Delete('delete_entire_audio_group/:parentaudioId')
   async deleteEntireaudioGroup(
     @Param()
-    param: {
-      parentaudioId: string;
-    },
+    param: DeleteEntireAudioGroupDTO,
     @Res() res: Response,
   ) {
     const { parentaudioId } = param;

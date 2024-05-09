@@ -34,7 +34,7 @@ export class AudiosService {
     parentId: string,
     details: AudioDetailsDTO,
     name: string,
-    audioActionType: string,
+    audioActionType: string, //Enum: 'create' | 'update'
     req: Request,
     res: Response,
   ) {

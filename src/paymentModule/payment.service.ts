@@ -30,8 +30,8 @@ export class PaymentService {
     @InjectModel('transaction') private transaction: Model<any>,
     @InjectModel('wallet') private wallet: Model<any>,
     @InjectModel('auths') private User: Model<any>, // private readonly moduleRef: ModuleRef,
-    // private authservice: AuthService,
-  ) // @Inject(forwardRef(() => AuthService))
+    // @Inject(forwardRef(() => AuthService))
+  ) // private authservice: AuthService,
   {}
 
   //HELPER FUNCTIONS
@@ -94,6 +94,7 @@ export class PaymentService {
   }
   async createWalletTransactions(
     userId: string,
+    isInflow: boolean,
     status: string,
     amount: string | number,
     description: string,
@@ -102,7 +103,7 @@ export class PaymentService {
     const walletTransaction = await this.wallettransaction.create({
       amount,
       userId,
-      isInflow: true,
+      isInflow,
       status,
       description,
       narration,
@@ -111,6 +112,7 @@ export class PaymentService {
   }
   async createTransaction(
     userId: string,
+    isInflow: boolean,
     id: string,
     status: string,
     amount: string | number,
@@ -121,6 +123,7 @@ export class PaymentService {
   ) {
     const transaction = this.transaction.create({
       userId,
+      isInflow,
       transactionId: id,
       name: customer.name,
       email: customer.email,
@@ -196,6 +199,7 @@ export class PaymentService {
 
       await this.createWalletTransactions(
         user._id,
+        true,
         status,
         amount,
         description,
@@ -204,6 +208,7 @@ export class PaymentService {
 
       await this.createTransaction(
         user._id,
+        true,
         id,
         status,
         amount,
@@ -227,9 +232,6 @@ export class PaymentService {
   async payStackPaymentResponse(
     responseObject: {
       reference: string;
-      status: string;
-      transactionId: string;
-      trxref: string;
     },
     res: Response,
   ) {
@@ -255,29 +257,31 @@ export class PaymentService {
         // console.log(response?.body);
         try {
           const result = response?.body;
-          if (result.status === 'error') {
+          if (result?.status === 'error') {
             return res.status(400).json({
               msg: 'No bank is found for this particular country code',
             });
           }
-          if (result.data.status === 'success') {
+          if (result?.data?.status === 'success') {
             const { id, status, amount, reference, customer } = result?.data;
             const { userId, userName, phonenumber } = result?.data?.metadata;
 
             await this.validateUserWallet(userId);
             await this.createWalletTransactions(
               userId,
+              true,
               status,
-              amount,
+              Number(amount) / 100,
               'wallet increase',
               `${userName} funded their wallet`,
             );
 
             await this.createTransaction(
               userId,
+              true,
               id,
               status,
-              amount,
+              Number(amount) / 100,
               {
                 name: userName,
                 email: customer?.email,
@@ -337,6 +341,7 @@ export class PaymentService {
       //create wallet trascation records
       await this.createWalletTransactions(
         userId,
+        false,
         'success',
         amount,
         'wallet decrease',
@@ -346,6 +351,7 @@ export class PaymentService {
       //create a more elaborate transaction record
       await this.createTransaction(
         userId,
+        false,
         String(Date.now() + (Math.random() * 10 ** 5).toFixed(0)),
         'success',
         amount,
@@ -355,7 +361,7 @@ export class PaymentService {
           phone_number: user?.phoneNumber,
         },
         (Math.random() * 10 ** 10).toFixed(0),
-        'wallet increase',
+        'wallet decrease',
         `${user?.firstName} ${user?.lastName} funded their wallet`,
       );
 

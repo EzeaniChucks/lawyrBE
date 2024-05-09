@@ -11,11 +11,11 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { FlashCardsService } from './flashcards.service';
-import { cardBody, cardIdDTO } from './flashcards.dto';
+import { UpdateFlashCard, cardBody, cardIdDTO } from './flashcards.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @Controller('flashcards')
-@ApiTags('Flashcards')
+@ApiTags('FlashCards')
 export class FlashCardController {
   constructor(private readonly flashservice: FlashCardsService) {}
   @Post('create_flashcard')
@@ -29,10 +29,11 @@ export class FlashCardController {
   }
   @Get('get_flashcard/:flashcardId')
   async getFlashCard(
-    @Param('flashcardId') flashcardId: cardIdDTO,
+    @Param() param: cardIdDTO,
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    const { flashcardId } = param;
     return await this.flashservice.getFlashCard(flashcardId, res);
   }
   @Get('get_all_flashcards')
@@ -43,9 +44,10 @@ export class FlashCardController {
   ) {
     return await this.flashservice.getAllFlashCards(req, res);
   }
+
   @Put('update_flashcard')
   async updateFlashCard(
-    @Body() body: { flashcardId: cardIdDTO; cardBody: cardBody },
+    @Body() body: UpdateFlashCard,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -61,10 +63,11 @@ export class FlashCardController {
   }
   @Delete('delete_flashcard/:flashcardId')
   async deleteFlashCard(
-    @Param('flashcardId') flashCardId: cardIdDTO,
+    @Param() param: cardIdDTO,
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    return await this.flashservice.deleteFlashCard(flashCardId, req, res);
+    const { flashcardId } = param;
+    return await this.flashservice.deleteFlashCard(flashcardId, req, res);
   }
 }

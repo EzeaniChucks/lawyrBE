@@ -9,14 +9,28 @@ import {
   Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDTO, RegisterDTO, UserDetailsResponseDTO } from './auth.dto';
+import {
+  EditOngoingMCQDTO,
+  EndOngoingMCQDTO,
+  FetchAllCompletedGroupTest,
+  FetchAllCompletedMCQ,
+  FetchCurrentOngoingMCQ,
+  LoginDTO,
+  RegisterDTO,
+  ResetPasswordDTO,
+  UserDetailsResponseDTO,
+  fetchCurrentOngoingGroupMCQDTO,
+  sendResetPassToEmailDTO,
+  startMCQGroupTestDTO,
+  startMCQTestDTO,
+} from './auth.dto';
 import { Response, Request } from 'express';
 import { MCQScenarios, MCQuestionsDTO, mcqDetailsDTO } from 'src/mcqs/mcqs.dto';
 import { Date } from 'mongoose';
 import { ApiBody, ApiOkResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @Controller('auth')
-@ApiTags('auth')
+@ApiTags('Auth')
 export class AuthController {
   constructor(private readonly authsevice: AuthService) {}
 
@@ -25,6 +39,7 @@ export class AuthController {
   @ApiResponse({
     status: 400,
     description: 'Returns false. User cookie has expired',
+    // links:{}
   })
   @ApiBody({ type: 'cookie string' })
   async isLoggedIn(@Res() res: Response, @Req() req: Request) {
@@ -48,10 +63,6 @@ export class AuthController {
     status: 400,
     description: 'Returns false. User cookie has expired',
   })
-  // @ApiOkResponse({
-  //   description: 'Response with user object having few important details',
-  //   type: UserDetailsResponseDTO,
-  // })
   @ApiBody({ type: 'cookie string' })
   async fullUserDetails(@Res() res: Response, @Req() req: Request) {
     return await this.authsevice.getFullUserDetails(req, res);
@@ -67,6 +78,24 @@ export class AuthController {
     return await this.authsevice.register(body, res);
   }
 
+  //send reset pass request to email
+  @Post('auth/send_reset_pass_to_email')
+  @ApiTags('Auth')
+  async sendResetPassToEmail(
+    @Body() body: sendResetPassToEmailDTO,
+    @Res() res: Response,
+  ) {
+    return this.authsevice.sendResetPassToEmail(body?.email, res);
+  }
+
+  //reset password
+  @Post('auth/reset_passwords')
+  @ApiTags('Auth')
+  async sendResetPass(@Body() body: ResetPasswordDTO, @Res() res: Response) {
+    const { resetToken, email, password } = body;
+    return this.authsevice.resetPassword(resetToken, email, password, res);
+  }
+
   @Get('logout')
   async signout(@Res() res: Response) {
     return this.authsevice.signout(res);
@@ -75,17 +104,7 @@ export class AuthController {
   @Post('start_mcq_test')
   async startMcqTest(
     @Body()
-    body: {
-      userId: string;
-      mcq: {
-        creatorId: string;
-        clonedresourceId: string;
-        mcqDetails: mcqDetailsDTO;
-        QAs: MCQuestionsDTO[];
-        scenarios: MCQScenarios[];
-        expiryDate: Date;
-      };
-    },
+    body: startMCQTestDTO,
     @Res() res: Response,
   ) {
     const { userId, mcq } = body;
@@ -95,32 +114,27 @@ export class AuthController {
   @Get('fetch_current_ongoing_mcq/:userId/:mcqId')
   async fetchCurrentOngoingMCQ(
     @Param()
-    param: {
-      userId: string;
-      mcqId: string;
-    },
+    param: FetchCurrentOngoingMCQ,
     @Res() res: Response,
   ) {
     const { userId, mcqId } = param;
     return this.authsevice.fetchCurrentOngoingMCQ(userId, mcqId, res);
   }
+
   @Get('fetch_all_completed_mcqs/:userId')
   async fetchAllCompletedMCQs(
     @Param()
-    param: {
-      userId: string;
-    },
+    param: FetchAllCompletedMCQ,
     @Res() res: Response,
   ) {
     const { userId } = param;
     return this.authsevice.fetchAllCompletedMCQs(userId, res);
   }
+
   @Get('fetch_all_completed_grouptests/:userId')
   async fetchAllCompletedGroupTests(
     @Param()
-    param: {
-      userId: string;
-    },
+    param: FetchAllCompletedGroupTest,
     @Res() res: Response,
   ) {
     const { userId } = param;
@@ -130,24 +144,17 @@ export class AuthController {
   @Put('edit_ongoing_mcq')
   async editOngoingMCQ(
     @Body()
-    body: {
-      userId: string;
-      QAs: MCQuestionsDTO[];
-      mcqId: string;
-    },
+    body: EditOngoingMCQDTO,
     @Res() res: Response,
   ) {
     const { userId, mcqId, QAs } = body;
     return this.authsevice.editOngoingMCQ(userId, QAs, mcqId, res);
   }
+
   @Put('end_ongoing_mcq')
   async endOngoingMCQ(
     @Body()
-    body: {
-      userId: string;
-      QAs: MCQuestionsDTO[];
-      mcqId: string;
-    },
+    body: EndOngoingMCQDTO,
     @Res() res: Response,
   ) {
     const { userId, mcqId, QAs } = body;
@@ -157,18 +164,7 @@ export class AuthController {
   @Post('start_group_mcq_test')
   async startGroupMcqTest(
     @Body()
-    body: {
-      userId: string;
-      mcq: {
-        grouptestId: string;
-        creatorId: string;
-        clonedresourceId: string;
-        mcqDetails: mcqDetailsDTO;
-        QAs: MCQuestionsDTO[];
-        scenarios: MCQScenarios[];
-        expiryDate: Date;
-      };
-    },
+    body: startMCQGroupTestDTO,
     @Res() res: Response,
   ) {
     const { userId, mcq } = body;
@@ -178,21 +174,17 @@ export class AuthController {
   @Get('fetch_current_ongoing_group_mcq/:userId/:mcqId')
   async fetchCurrentOngoingGroupMCQ(
     @Param()
-    param: {
-      userId: string;
-      mcqId: string;
-    },
+    param: fetchCurrentOngoingGroupMCQDTO,
     @Res() res: Response,
   ) {
     const { userId, mcqId } = param;
     return this.authsevice.fetchCurrentOngoingGroupMCQ(userId, mcqId, res);
   }
+
   @Get('fetch_all_completed_group_mcqs/:userId')
   async fetchAllCompletedGroupMCQs(
     @Param()
-    param: {
-      userId: string;
-    },
+    param: FetchAllCompletedGroupTest,
     @Res() res: Response,
   ) {
     const { userId } = param;
@@ -202,11 +194,7 @@ export class AuthController {
   @Put('edit_ongoing_group_mcq')
   async editOngoingGroupMCQ(
     @Body()
-    body: {
-      userId: string;
-      QAs: MCQuestionsDTO[];
-      mcqId: string;
-    },
+    body: EditOngoingMCQDTO,
     @Res() res: Response,
   ) {
     const { userId, mcqId, QAs } = body;
@@ -215,11 +203,7 @@ export class AuthController {
   @Put('end_ongoing_group_mcq')
   async endOngoingGroupMCQ(
     @Body()
-    body: {
-      userId: string;
-      QAs: MCQuestionsDTO[];
-      mcqId: string;
-    },
+    body: EndOngoingMCQDTO,
     @Res() res: Response,
   ) {
     const { userId, mcqId, QAs } = body;

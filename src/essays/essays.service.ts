@@ -37,7 +37,7 @@ export class EssaysService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-  async getEssay(essayId: essayIdDTO, res: Response) {
+  async getEssay(essayId: string, res: Response) {
     try {
       const essay = await this.essay
         .findOne({ _id: essayId })
@@ -58,7 +58,7 @@ export class EssaysService {
     }
   }
   async updateEssay(
-    essayId: essayIdDTO,
+    essayId: string,
     details: essayDetailsDTO,
     essayBody: essayBodyDTO,
     req: Request,

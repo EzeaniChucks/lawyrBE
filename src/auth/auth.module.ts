@@ -4,10 +4,12 @@ import { authSchema } from './auth.model';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { contentsSchema } from 'src/contents/contents.model';
+import { PaymentModule } from 'src/paymentModule/payment.module';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: 'auths', schema: authSchema }]),
     MongooseModule.forFeature([{ name: 'contents', schema: contentsSchema }]),
+    PaymentModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],

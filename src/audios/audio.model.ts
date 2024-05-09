@@ -15,7 +15,7 @@ export const audioSchema = new mongoose.Schema(
         asset_id: { type: String },
         version: { type: String },
         version_id: { type: String },
-        signature: { type: String, required: true },
+        signature: { type: String },
         resource_type: { type: String, required: true },
         format: { type: String, required: true },
         playback_url: { type: String },
