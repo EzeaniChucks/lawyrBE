@@ -5,7 +5,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://charityorg.vercel.app'],
+    origin: [
+      process.env.NODE_ENV === 'production' ? null : 'http://localhost:3000',
+      'https://charityorg.vercel.app',
+      'https://lawyrv1.vercel.app',
+    ],
     credentials: true,
   });
   app.use(cookieParser(process.env.JWT_SECRET));
