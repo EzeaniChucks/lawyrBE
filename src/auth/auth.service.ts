@@ -257,6 +257,7 @@ export class AuthService {
           expires: new Date(Date.now()),
           secure: process.env.NODE_ENV === 'production',
           signed: true,
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         },
       );
       return res.status(200).json({ msg: 'logout successful' });
