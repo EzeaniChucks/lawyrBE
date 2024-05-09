@@ -59,6 +59,7 @@ export const attachCookiesToResponse = async (
     expires: new Date(Date.now() + oneDay),
     secure: process.env.NODE_ENV === 'production',
     signed: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   });
 };
 // const contents = mongoose.model('contents', contentsSchema);
