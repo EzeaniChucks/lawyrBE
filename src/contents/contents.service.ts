@@ -94,7 +94,7 @@ export class ContentsService {
     res: Response,
   ) {
     try {
-      console.log(item)
+      // console.log(item)
       const namecheck = [
         'flashcard',
         'mcq',
