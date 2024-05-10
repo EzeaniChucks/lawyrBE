@@ -272,12 +272,17 @@ export class adduserIdsToResourcePaymentArraysDTO {
       subscribedUsersIds: {
         userName: 'John Doe',
         userId: 'mongooseGeneratedId',
+        expiryDate: new Date(),
       },
       paidUsersIds: { userName: 'Susan Doe', userId: 'mongooseGeneratedId' },
     },
   })
   settingsObj: {
-    subscribedUsersIds: { userName: string; userId: string };
+    subscribedUsersIds: {
+      userName: string;
+      userId: string;
+      expiryDate: string | Date;
+    };
     paidUsersIds: { userName: string; userId: string };
   };
 }

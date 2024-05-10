@@ -32,8 +32,9 @@ export class PaymentService {
     @InjectModel('wallet') private wallet: Model<any>,
     @InjectModel('auths') private User: Model<any>, // private readonly moduleRef: ModuleRef,
     // @Inject(forwardRef(() => AuthService))
-  ) // private authservice: AuthService,
-  {}
+  ) {
+    // private authservice: AuthService,
+  }
 
   //HELPER FUNCTIONS
 
@@ -368,6 +369,63 @@ export class PaymentService {
 
       //charge the wallet
       const result = await this.decreaseWallet(userId, amount);
+      if (result) {
+        return res.status(200).json({ msg: 'success', payload: result });
+      } else {
+        return res
+          .status(400)
+          .json({ msg: 'Something went wrong. Please try again' });
+      }
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
+
+  async fundWallet(
+    userId: string,
+    amount: number,
+    purpose: string,
+    res: Response,
+  ) {
+    try {
+      //fetch user. Some propeties needed for other database calls below
+      const user = await this.User.findOne({ _id: userId });
+      if (!user) {
+        return res.status(400).json({ msg: 'Bad request. User not found' });
+      }
+
+      //check if user has a wallet. If not, create one.
+      await this.validateUserWallet(userId);
+
+      //create wallet trascation records
+      await this.createWalletTransactions(
+        userId,
+        true,
+        'success',
+        amount,
+        purpose,
+        `Inapp purchase`,
+      );
+
+      //create a more elaborate transaction record
+      await this.createTransaction(
+        userId,
+        true,
+        String(Date.now() + (Math.random() * 10 ** 5).toFixed(0)),
+        'success',
+        amount,
+        {
+          name: `${user?.firstName} ${user?.lastName}`,
+          email: user?.email,
+          phone_number: user?.phoneNumber,
+        },
+        (Math.random() * 10 ** 10).toFixed(0),
+        purpose,
+        `${user?.firstName} ${user?.lastName}, your wallet was refunded`,
+      );
+
+      //charge the wallet
+      const result = await this.increaseWallet(userId, Number(amount));
       if (result) {
         return res.status(200).json({ msg: 'success', payload: result });
       } else {

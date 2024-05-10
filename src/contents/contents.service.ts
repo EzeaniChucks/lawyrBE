@@ -94,18 +94,26 @@ export class ContentsService {
     res: Response,
   ) {
     try {
-      const namecheck = ['flashcard', 'mcq', 'video', 'audio', 'essay', 'pdf'];
+      const namecheck = [
+        'flashcard',
+        'mcq',
+        'video',
+        'audio',
+        'essay',
+        'pdf',
+        'folder',
+      ];
       if (!namecheck.includes(item?.resourceName)) {
         return res.status(400).json({
           msg: 'unccessful',
           payload:
-            'You sent the wrong data for resource name. Enums are flashcard, mcq, video, audio, essay, pdf',
+            'You sent the wrong data for resource name. Enums are flashcard, mcq, video, audio, essay, pdf, folder',
         });
       }
       //check if item is already in cart
       let checkusercart = await this.auth.findOne({
         _id: userId,
-        'assets.cart': { $elemMatch: { resourceId: item.resourceId } },
+        'assets.cart': { $elemMatch: { resourceId: item?.resourceId } },
       });
 
       if (checkusercart) {
@@ -114,18 +122,30 @@ export class ContentsService {
           payload: 'item is already in your cart',
         });
       }
-
-      const user = await this.auth.findOne({ _id: userId });
+      // console.log('content item', item);
+      let user;
       if (destination === 'subscriptions array') {
-        user.assets.subscriptions.push(item);
+        user = await this.auth.findOneAndUpdate(
+          { _id: userId },
+          { $push: { 'assets.subscriptions': item } },
+          { new: true },
+        );
       }
       if (destination === 'purchases array') {
-        user.assets.purchases.push(item);
+        user = await this.auth.findOneAndUpdate(
+          { _id: userId },
+          { $push: { 'assets.purchases': item } },
+          { new: true },
+        );
       }
       if (destination === 'cart array') {
-        user.assets.cart.push(item);
+        user = await this.auth.findOneAndUpdate(
+          { _id: userId },
+          { $push: { 'assets.cart': item } },
+          { new: true },
+        );
       }
-      user.save();
+      // await user.save();
       const { _id, firstName, lastName, isAdmin, assets, phoneNumber } = user;
       await attachCookiesToResponse(res, {
         _id,
@@ -625,7 +645,7 @@ export class ContentsService {
           let subIsAcitve = result?.subscribedUsersIds.find(
             (eachUser: { userId: String; expiryDate: Date }) => {
               return (
-                eachUser.userId === userId &&
+                eachUser?.userId === userId &&
                 new Date(eachUser?.expiryDate) > new Date()
               );
             },
@@ -895,15 +915,26 @@ export class ContentsService {
     resourceName: string;
     resourceId: string;
     settingsObj: {
-      subscribedUsersIds: { userName: string; userId: string };
+      subscribedUsersIds: { userName: string; userId: string, expiryDate:Date|string };
       paidUsersIds: { userName: string; userId: string };
     };
     res: Response;
   }) {
     try {
-      const { subscribedUsersIds, paidUsersIds } = settingsObj;
+      const { subscribedUsersIds, paidUsersIds} = settingsObj;
       if (subscribedUsersIds === undefined && paidUsersIds === undefined) {
-        return res.status(400).json({ msg: 'Incomplete credentials' });
+        return res.status(400).json({
+          msg: 'Incomplete credentials. subscribedUsersIds and paidUsersIds fields are required',
+        });
+      }
+
+      const namecheck = ['flashcard', 'mcq', 'video', 'audio', 'essay', 'pdf'];
+      if (!namecheck.includes(resourceName)) {
+        return res.status(400).json({
+          msg: 'unsuccessful',
+          payload:
+            'You sent the wrong data for resource name. Enums are flashcard, mcq, video, audio, essay, pdf',
+        });
       }
 
       if (resourceName === 'flashcard') {

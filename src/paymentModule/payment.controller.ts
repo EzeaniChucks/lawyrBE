@@ -12,7 +12,11 @@ import {
 import { PaymentService } from './payment.service';
 import { Response, query, response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
-import { ChargeUserWalletDTO, PayStackPaymentResponseDTO } from './payment.dto';
+import {
+  ChargeUserWalletDTO,
+  FundUserWalletDTO,
+  PayStackPaymentResponseDTO,
+} from './payment.dto';
 
 @Controller('wallet')
 @ApiTags('Payment')
@@ -54,6 +58,11 @@ export class PaymentController {
   async chargeWallet(@Body() body: ChargeUserWalletDTO, @Res() res: Response) {
     const { userId, amount } = body;
     return await this.paymentservice.chargeWallet(userId, amount, res);
+  }
+  @Post('/fund_user_wallet')
+  async fundWallet(@Body() body: FundUserWalletDTO, @Res() res: Response) {
+    const { userId, amount, purpose } = body;
+    return await this.paymentservice.fundWallet(userId, amount, purpose, res);
   }
 
   //in-app
