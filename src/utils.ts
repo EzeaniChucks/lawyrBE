@@ -47,6 +47,7 @@ export const attachCookiesToResponse = async (
     _id: string;
     firstName: string;
     lastName: string;
+    email: string;
     phoneNumber: string;
     isAdmin: string;
     assets: [{ subscriptions: []; purchases: []; cart: [] }];

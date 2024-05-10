@@ -56,7 +56,27 @@ export class AuthService {
   async getFullUserDetails(req: Request, res: Response) {
     try {
       const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
-      return res.status(200).json({ ...decoded, isAdmin: null });
+      const user = await this.user.findOne({_id:decoded._id});
+      const {
+        _id,
+        email,
+        firstName,
+        lastName,
+        phoneNumber,
+        isVerified,
+        assets,
+      } = user;
+      return res
+        .status(200)
+        .json({
+          _id,
+          email,
+          firstName,
+          lastName,
+          phoneNumber,
+          isVerified,
+          assets,
+        });
     } catch (err) {
       return res.status(500).json(err?.message);
     }
@@ -81,7 +101,6 @@ export class AuthService {
           firstName,
           lastName,
           phoneNumber,
-          isVerified,
           isAdmin,
           assets,
         } = user;
@@ -90,6 +109,7 @@ export class AuthService {
           _id,
           firstName,
           lastName,
+          email,
           phoneNumber,
           isAdmin,
           assets,
@@ -126,6 +146,7 @@ export class AuthService {
         _id: user?._id,
         firstName: user?.firstName,
         lastName: user?.lastName,
+        email:user?.email,
         phoneNumber: user?.phoneNumber || '',
         isAdmin: user?.isAdmin,
         assets: user.assets,
@@ -221,14 +242,14 @@ export class AuthService {
       user.verificationToken = '';
       await user.save();
 
-      const { _id, firstName, lastName, phoneNumber, isVerified, isAdmin } =
-        user;
+      const { _id, firstName, lastName, phoneNumber, isAdmin } = user;
       await this.paymentservice.validateUserWallet(_id);
       await attachCookiesToResponse(res, {
         _id,
         firstName,
         lastName,
         phoneNumber,
+        email,
         isAdmin,
         assets: [{ subscriptions: [], purchases: [], cart: [] }],
       });

@@ -103,9 +103,9 @@ export class ContentsService {
         'pdf',
         'folder',
       ];
-      if (!namecheck.includes(item?.resourceName)) {
+      if (!namecheck.includes(item?.resourceType)) {
         return res.status(400).json({
-          msg: 'unccessful',
+          msg: 'unsuccessful',
           payload:
             'You sent the wrong data for resource name. Enums are flashcard, mcq, video, audio, essay, pdf, folder',
         });
@@ -116,12 +116,22 @@ export class ContentsService {
         'assets.cart': { $elemMatch: { resourceId: item?.resourceId } },
       });
 
-      if (checkusercart) {
+      if (checkusercart && destination === 'cart array') {
         return res.status(400).json({
           msg: 'unsuccesful',
           payload: 'item is already in your cart',
         });
       }
+
+      if (checkusercart && destination !== 'cart array') {
+        await this.auth.findOneAndUpdate(
+          {
+            _id: userId,
+          },
+          { $pull: { 'assets.cart': { resourceId: item?.resourceId } } },
+        );
+      }
+
       // console.log('content item', item);
       let user;
       if (destination === 'subscriptions array') {
@@ -146,9 +156,11 @@ export class ContentsService {
         );
       }
       // await user.save();
-      const { _id, firstName, lastName, isAdmin, assets, phoneNumber } = user;
+      const { _id, email, firstName, lastName, isAdmin, assets, phoneNumber } =
+        user;
       await attachCookiesToResponse(res, {
         _id,
+        email,
         firstName,
         lastName,
         isAdmin,
@@ -179,16 +191,17 @@ export class ContentsService {
         'assets.cart': { $elemMatch: { resourceId: item.resourceId } },
       });
 
-      if (checkusercart) {
+      if (!checkusercart) {
         return res.status(400).json({
-          msg: 'unsuccesful',
-          payload: 'item is already in your cart',
+          msg: 'unsuccessful',
+          payload:
+            'item is not present in cart. You must have removed it already',
         });
       }
 
       let user;
       if (destination === 'subscriptions array') {
-        await this.auth.findOneAndUpdate(
+        user = await this.auth.findOneAndUpdate(
           { _id: userId },
           {
             $pull: {
@@ -201,25 +214,27 @@ export class ContentsService {
         );
       }
       if (destination === 'purchases array') {
-        await this.auth.findOneAndUpdate(
+        user = await this.auth.findOneAndUpdate(
           { _id: userId },
           { $pull: { 'assets.purchases': { resourceId: item?.resourceId } } },
           { new: true },
         );
       }
       if (destination === 'cart array') {
-        await this.auth.findOneAndUpdate(
+        user = await this.auth.findOneAndUpdate(
           { _id: userId },
           { $pull: { 'assets.cart': { resourceId: item?.resourceId } } },
           { new: true },
         );
       }
-      const { _id, firstName, lastName, isAdmin, assets, phoneNumber } = user;
+      const { _id, firstName, lastName, isAdmin, email, assets, phoneNumber } =
+        user;
       await attachCookiesToResponse(res, {
         _id,
         firstName,
         lastName,
         isAdmin,
+        email,
         assets,
         phoneNumber,
       });
@@ -915,13 +930,17 @@ export class ContentsService {
     resourceName: string;
     resourceId: string;
     settingsObj: {
-      subscribedUsersIds: { userName: string; userId: string, expiryDate:Date|string };
+      subscribedUsersIds: {
+        userName: string;
+        userId: string;
+        expiryDate: Date | string;
+      };
       paidUsersIds: { userName: string; userId: string };
     };
     res: Response;
   }) {
     try {
-      const { subscribedUsersIds, paidUsersIds} = settingsObj;
+      const { subscribedUsersIds, paidUsersIds } = settingsObj;
       if (subscribedUsersIds === undefined && paidUsersIds === undefined) {
         return res.status(400).json({
           msg: 'Incomplete credentials. subscribedUsersIds and paidUsersIds fields are required',

@@ -444,8 +444,8 @@ export class PaymentService {
         .find({ userId })
         .limit(15)
         .sort('-createdAt');
-      if (lastTen.length === 0)
-        throw new NotFoundException({ msg: 'No Transactions present' });
+      if (lastTen?.length === 0)
+        return { msg: 'success', latestTransactions: [] };
       else return { msg: 'success', latestTransactions: lastTen };
     } catch (err) {
       throw new InternalServerErrorException({
