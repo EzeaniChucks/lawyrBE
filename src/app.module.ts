@@ -1,4 +1,9 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -17,6 +22,8 @@ import { ChatsModule } from './chats/chats.module';
 import { NotifModule } from './notificationModule/notifModule';
 import { InvitationModule } from './invitationModule/invitationModule';
 import { PaymentModule } from './paymentModule/payment.module';
+import { ForAdminContentManagement } from './middleware/forAdminContentManagement';
+import { ContentsController } from './contents/contents.controller';
 // import {CloudinaryStorage} from 'multer-storage-cloudinary'
 // MulterModule.registerAsync({
 //   useFactory: () => ({
@@ -48,4 +55,32 @@ import { PaymentModule } from './paymentModule/payment.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(ForAdminContentManagement)
+      // .exclude(
+      //   {
+      //     path: 'paystack_bvn_validation_webhook_response',
+      //     method: RequestMethod.POST,
+      //   },
+      //   {
+      //     path: 'paystack_bvn_identity_validation',
+      //     method: RequestMethod.POST,
+      //   },
+      //   {
+      //     path: 'paystack_get_banks',
+      //     method: RequestMethod.GET,
+      //   },
+      // )
+      .forRoutes(
+        'admin/fetch_all_users/:purpose',
+        'admin/fetch_all_subadmins/:purpose',
+        'content/create_super_folder',
+        'content/add_parent_ids_to_resource',
+        'content/remove_parent_ids_from_resource',
+        'content/monify_resource',
+        'content/unmonify_resource',
+      );
+  }
+}

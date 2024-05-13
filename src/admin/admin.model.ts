@@ -15,6 +15,8 @@ export const accessSchema = new mongoose.Schema({
       can_create_admin_content: [mongoose.SchemaTypes.ObjectId],
       can_edit_admin_content: [mongoose.SchemaTypes.ObjectId],
       can_delete_admin_content: [mongoose.SchemaTypes.ObjectId],
+      can_monify_admin_content: [mongoose.SchemaTypes.ObjectId],
+      can_unmonify_admin_content: [mongoose.SchemaTypes.ObjectId],
     },
   },
 });

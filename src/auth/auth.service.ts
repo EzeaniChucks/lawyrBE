@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { LoginDTO, RegisterDTO } from './auth.dto';
-import { attachCookiesToResponse, jwtIsValid } from 'src/utils';
+import { attachCookiesToResponse, createJwt, jwtIsValid } from 'src/utils';
 import { InjectModel } from '@nestjs/mongoose';
 import { Date, Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
@@ -29,7 +29,7 @@ export class AuthService {
 
   async isLoggedIn(req: Request, res: Response) {
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
       if (decoded) {
         return res.status(200).json(true);
       } else {
@@ -42,8 +42,8 @@ export class AuthService {
 
   async isAdmin(req: Request, res: Response) {
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
-      if (decoded?.isAdmin === true) {
+      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      if (decoded?.isAdmin === true || decoded?.isSubAdmin === true) {
         return res.status(200).json(true);
       } else {
         return res.status(400).json(false);
@@ -55,7 +55,7 @@ export class AuthService {
 
   async getFullUserDetails(req: Request, res: Response) {
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
       const user = await this.user.findOne({_id:decoded._id});
       const {
         _id,
@@ -97,27 +97,22 @@ export class AuthService {
       if (passIsValid) {
         const {
           _id,
-          email,
           firstName,
           lastName,
-          phoneNumber,
           isAdmin,
-          assets,
+          isSubAdmin,
         } = user;
 
-        await attachCookiesToResponse(res, {
+        const token = await createJwt({
           _id,
           firstName,
           lastName,
-          email,
-          phoneNumber,
           isAdmin,
-          assets,
+          isSubAdmin,
         });
-
         return res.status(200).json({
           msg: 'Success',
-          // user: { _id, email, firstName, lastName, phoneNumber },
+          payload: token,
         });
       } else {
         return res.status(400).json({ msg: 'wrong email or password' });
@@ -142,17 +137,20 @@ export class AuthService {
         return res.status(400).json({ msg: 'User email already exists' });
       }
       const user = await this.user.create({ ...body, password: hashedPass });
-      const tokenUser = {
-        _id: user?._id,
-        firstName: user?.firstName,
-        lastName: user?.lastName,
-        email:user?.email,
-        phoneNumber: user?.phoneNumber || '',
-        isAdmin: user?.isAdmin,
-        assets: user.assets,
-      };
-      await attachCookiesToResponse(res, tokenUser);
-      return res.status(200).json({ msg: 'Success' });
+      const {
+        _id,
+        isAdmin,
+        isSubAdmin,
+      } = user;
+
+      const token = await createJwt({
+        _id,
+        firstName,
+        lastName,
+        isAdmin,
+        isSubAdmin,
+      });
+      return res.status(200).json({ msg: 'Success', payload:token });
     } catch (err) {
       return res.status(500).json({ msg: err?.message });
     }
@@ -242,7 +240,7 @@ export class AuthService {
       user.verificationToken = '';
       await user.save();
 
-      const { _id, firstName, lastName, phoneNumber, isAdmin } = user;
+      const { _id, firstName, lastName, phoneNumber, isAdmin, isSubAdmin, assets} = user;
       await this.paymentservice.validateUserWallet(_id);
       await attachCookiesToResponse(res, {
         _id,
@@ -251,8 +249,10 @@ export class AuthService {
         phoneNumber,
         email,
         isAdmin,
-        assets: [{ subscriptions: [], purchases: [], cart: [] }],
+        isSubAdmin,
+        assets,
       });
+
       return res.status(200).json({
         msg: 'password reset successful',
         user: {
@@ -263,6 +263,7 @@ export class AuthService {
           phoneNumber,
         },
       });
+
     } catch (err) {
       return res.status(500).json({ msg: err?.message });
     }

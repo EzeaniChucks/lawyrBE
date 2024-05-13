@@ -37,7 +37,7 @@ export class ContentsService {
   async createcontent(contentfile: Contents, req: Request, res: Response) {
     const { name, resource, type, searchTags } = contentfile;
     try {
-      const cookieObj = await jwtIsValid(req?.signedCookies?.accessToken);
+      const cookieObj = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
       const creatorId = cookieObj._id;
       if (cookieObj?.isAdmin !== true) {
         return res.status(400).json({ msg: 'Forbidden request' });
@@ -157,17 +157,26 @@ export class ContentsService {
         );
       }
       // await user.save();
-      const { _id, email, firstName, lastName, isAdmin, assets, phoneNumber } =
-        user;
-      await attachCookiesToResponse(res, {
-        _id,
-        email,
-        firstName,
-        lastName,
-        isAdmin,
-        assets,
-        phoneNumber,
-      });
+      // const {
+      //   _id,
+      //   email,
+      //   firstName,
+      //   lastName,
+      //   isAdmin,
+      //   assets,
+      //   phoneNumber,
+      //   isSubAdmin,
+      // } = user;
+      // await attachCookiesToResponse(res, {
+      //   _id,
+      //   email,
+      //   firstName,
+      //   lastName,
+      //   isAdmin,
+      //   isSubAdmin,
+      //   assets,
+      //   phoneNumber,
+      // });
       return res
         .status(200)
         .json({ msg: 'success', payload: 'item successfully added to cart' });
@@ -175,7 +184,6 @@ export class ContentsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
-
   //removes a resource or folder to the user cart, purchases or subscriptions records
   async removeItemFromUserAssets(
     userId: string,
@@ -228,17 +236,26 @@ export class ContentsService {
           { new: true },
         );
       }
-      const { _id, firstName, lastName, isAdmin, email, assets, phoneNumber } =
-        user;
-      await attachCookiesToResponse(res, {
-        _id,
-        firstName,
-        lastName,
-        isAdmin,
-        email,
-        assets,
-        phoneNumber,
-      });
+      // const {
+      //   _id,
+      //   firstName,
+      //   lastName,
+      //   isAdmin,
+      //   email,
+      //   assets,
+      //   phoneNumber,
+      //   isSubAdmin,
+      // } = user;
+      // await attachCookiesToResponse(res, {
+      //   _id,
+      //   firstName,
+      //   lastName,
+      //   isAdmin,
+      //   email,
+      //   assets,
+      //   isSubAdmin,
+      //   phoneNumber,
+      // });
       return res
         .status(200)
         .json({ msg: 'success', payload: 'item successfully added to cart' });
@@ -252,7 +269,7 @@ export class ContentsService {
     res: Response,
   ) {
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
       if (!decoded?.isAdmin) {
         return res.status(400).json({ msg: 'Forbidden request' });
       }
@@ -791,7 +808,8 @@ export class ContentsService {
     }
   }
 
-  //endpoint called after adding a new file to a folder. Useful for locating the file within the folder in the future
+  //endpoint called after adding a new file to a folder.
+  //Useful for locating the file within the folder in the future
   async addParentIdsToResource({
     resourceName,
     resourceId,
@@ -806,8 +824,8 @@ export class ContentsService {
     res: Response;
   }) {
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
-      if (decoded?.isAdmin === true) {
+      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      if (decoded?.isAdmin === true || decoded.isSubAdmin === true) {
         if (resourceName === 'flashcard') {
           await this.flashcard.findOneAndUpdate(
             { _id: resourceId },
@@ -870,8 +888,8 @@ export class ContentsService {
     res: Response;
   }) {
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
-      if (decoded?.isAdmin === true) {
+      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      if (decoded?.isAdmin === true || decoded.isSubAdmin === true) {
         if (resourceName === 'flashcard') {
           await this.flashcard.findOneAndUpdate(
             { _id: resourceId },
@@ -1073,8 +1091,8 @@ export class ContentsService {
     res: Response;
   }) {
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
-      if (decoded?.isAdmin === true) {
+      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      if (decoded?.isAdmin === true || decoded.isSubAdmin === true) {
         const { isSubscription, isPurchase } = settingsObj;
         if (!isSubscription === undefined || isPurchase === undefined) {
           return res.status(400).json({ msg: 'Incomplete credentials' });
@@ -1148,8 +1166,8 @@ export class ContentsService {
       subscriptionPrice: 0,
     };
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
-      if (decoded?.isAdmin === true) {
+      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      if (decoded?.isAdmin === true || decoded.isSubAdmin === true) {
         if (resourceName === 'flashcard') {
           await this.flashcard.findOneAndUpdate(
             { _id: resourceId },

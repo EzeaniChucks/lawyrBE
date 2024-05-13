@@ -1,20 +1,17 @@
 import {
-  BadRequestException,
   ForbiddenException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { Response } from 'express';
-import { mcqIdDTO } from './mcqs/mcqs.dto';
-import mongoose, { Model } from 'mongoose';
-import { contentsSchema } from './contents/contents.model';
+import { Model } from 'mongoose';
 
 export const createJwt = async (body: {
   _id: string;
   firstName: string;
   lastName: string;
-  phoneNumber: string;
-  isAdmin: string;
+  isAdmin: boolean;
+  isSubAdmin: boolean;
 }) => {
   try {
     const token = await jwt.sign(body, process.env.JWT_SECRET, {
@@ -49,7 +46,8 @@ export const attachCookiesToResponse = async (
     lastName: string;
     email: string;
     phoneNumber: string;
-    isAdmin: string;
+    isAdmin: boolean;
+    isSubAdmin: boolean;
     assets: [{ subscriptions: []; purchases: []; cart: [] }];
   },
 ) => {

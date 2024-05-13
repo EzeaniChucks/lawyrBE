@@ -19,7 +19,7 @@ export class AdminService {
   //below method no longer useful
   // async isAdmin(req: Request, res: Response) {
   //   try {
-  //     const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+  //     const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
   //     if (decoded?.isAdmin === true) {
   //       return res.status(200).json(true);
   //     } else {
@@ -36,7 +36,9 @@ export class AdminService {
     res: Response,
   ) {
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       if (decoded?.isAdmin === true) {
         let responseArray = undefined;
         if (resourceName === 'flashcard') {
@@ -149,7 +151,7 @@ export class AdminService {
       const obj = {};
       obj[`access.subAdmin.${accessName}`] = subAdminId;
       const result = await this.accesses.findOneAndUpdate(
-        { _id: '6519bada7a9fceeea2cd5cf2' },
+        { _id: process.env.ACCESS_DOC_ID },
         { $push: obj },
       );
       if (result) {
@@ -185,7 +187,7 @@ export class AdminService {
       const obj = {};
       obj[`access.subAdmin.${accessName}`] = subAdminId;
       const result = await this.accesses.findOneAndUpdate(
-        { _id: '6519bada7a9fceeea2cd5cf2' },
+        { _id: process.env.ACCESS_DOC_ID },
         { $pull: obj },
       );
       if (result) {
@@ -197,6 +199,45 @@ export class AdminService {
       }
     } catch (err) {
       return res.status(500).json({ msg: err?.message });
+    }
+  }
+
+  async checkSubAdminAccessEligibility(subAdminId: string, accessName: string) {
+    try {
+      const paths = [
+        'can_penalize_users',
+        'can_ban_users',
+        'can_create_other_subadmins',
+        'can_remove_other_subadmins',
+        'can_create_admin_content',
+        'can_edit_admin_content',
+        'can_delete_admin_content',
+        'can_monify_admin_content',
+        'can_unmonify_admin_content',
+      ];
+
+      if (!paths.includes(accessName)) {
+        return { msg: 'unavailable access name', payload: false };
+      }
+
+      //check if userId is in Access Registry on the database
+
+      const obj = {};
+      obj[`access.subAdmin.${accessName}`] = { $in: [subAdminId] };
+      const result = await this.accesses.findOne(
+        { _id: process.env.ACCESS_DOC_ID, obj },
+        { $push: obj },
+      );
+
+      console.log('subadmin access eligibility', result);
+
+      if (result) {
+        return { msg: 'success', payload: true };
+      } else {
+        return { msg: 'access denied', payload: false };
+      }
+    } catch (err: any) {
+      return { msg: err.message, payload: false };
     }
   }
 }
