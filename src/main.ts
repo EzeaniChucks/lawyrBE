@@ -11,6 +11,9 @@ async function bootstrap() {
       'https://lawyrv1.vercel.app',
     ],
     credentials: true,
+    allowedHeaders:
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization',
+    methods: 'GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS',
   });
   app.use(cookieParser(process.env.JWT_SECRET));
   const options = new DocumentBuilder()
