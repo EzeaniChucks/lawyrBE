@@ -57,30 +57,45 @@ import { ContentsController } from './contents/contents.controller';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(ForAdminContentManagement)
-      // .exclude(
-      //   {
-      //     path: 'paystack_bvn_validation_webhook_response',
-      //     method: RequestMethod.POST,
-      //   },
-      //   {
-      //     path: 'paystack_bvn_identity_validation',
-      //     method: RequestMethod.POST,
-      //   },
-      //   {
-      //     path: 'paystack_get_banks',
-      //     method: RequestMethod.GET,
-      //   },
-      // )
-      .forRoutes(
-        'admin/fetch_all_users/:purpose',
-        'admin/fetch_all_subadmins/:purpose',
-        'content/create_super_folder',
-        'content/add_parent_ids_to_resource',
-        'content/remove_parent_ids_from_resource',
-        'content/monify_resource',
-        'content/unmonify_resource',
-      );
+    consumer.apply(ForAdminContentManagement).forRoutes(
+      'admin/fetch_all_users/:purpose',
+      'admin/fetch_all_subadmins/:purpose',
+      'admin/turn_user_to_subadmin',
+      'admin/turn_subadmin_to_user',
+      'content/add_parent_ids_to_resource',
+      'content/remove_parent_ids_from_resource',
+      'content/monify_resource',
+      'content/unmonify_resource',
+      //create
+      'contents/create_super_folder',
+      'audios/upload_audio',
+      'docx_pdfs/upload_docx_pdf',
+      'essays/create_essay',
+      'flashcards/create_flashcard',
+      'mcqs/create_mcq',
+      'upload_videos/create_upload_video',
+      //update
+      'contents/update_single_content',
+      'contents/monify_resource',
+      'contents/unmonify_resource',
+      'audios/replace_single_audio',
+      'audios/edit_single_audio_name',
+      'audios/edit_audio_details',
+      'docx_pdfs/replace_single_docx_pdf',
+      'docx_pdfs/edit_single_docx_pdf_name',
+      'docx_pdfs/edit_docx_pdf_details',
+      'essays/update_essay',
+      'flashcards/update_flashcard',
+      'mcqs/update_mcq',
+      'videos/update_video',
+      //delete
+      'audios/delete_single_audio',
+      'audios/delete_entire_audio_group/:parentaudioId',
+      'docx_pdfs/delete_single_docx_pdf',
+      'essays/delete_essay/:essayId',
+      'flashcards/delete_flashcard/:flashcardId',
+      'mcqs/delete_mcq/:mcqId',
+      'videos/delete_video/:videoId',
+    );
   }
 }

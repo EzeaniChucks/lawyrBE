@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Request, Response } from 'express';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { jwtIsValid } from 'src/utils';
 
 @Injectable()
@@ -98,7 +98,49 @@ export class AdminService {
       if (purpose === 'for_admin_settings') {
         list = await this.auths
           .find({ isAdmin: false, isSubAdmin: true })
-          .select('_id firstName lastName');
+          .select('_id firstName lastName email');
+
+        const finalList = [];
+        // Loop through each user
+        for (const user of list) {
+          // Retrieve the _id of the user
+          const userId = user._id;
+
+          // Query the access collection
+          const access = await this.accesses.findOne({
+            $or: [
+              { 'access.subAdmin.can_penalize_users': userId },
+              { 'access.subAdmin.can_ban_users': userId },
+              { 'access.subAdmin.can_create_other_subadmins': userId },
+              { 'access.subAdmin.can_remove_other_subadmins': userId },
+              { 'access.subAdmin.can_create_admin_content': userId },
+              { 'access.subAdmin.can_edit_admin_content': userId },
+              { 'access.subAdmin.can_delete_admin_content': userId },
+              { 'access.subAdmin.can_monify_admin_content': userId },
+              { 'access.subAdmin.can_unmonify_admin_content': userId },
+            ],
+          });
+
+          // Initialize an array to store access names
+          const accessNames = [];
+
+          // If access is found, extract the object keys where userId is present
+          if (access) {
+            // console.log(true, user?.firstName);
+            const subAdmin = access.access.subAdmin;
+            for (const key in subAdmin) {
+              if (subAdmin[key]?.toString()?.includes(userId)) {
+                accessNames.push(key);
+              }
+            }
+          }
+          // Add the accessNames to the user object
+          finalList.push({ ...user._doc, subAdminAccesses:accessNames });
+        }
+
+        // Now users array contains a new field 'accessesNames' for each user
+        // console.log(finalList);
+        return res.status(200).json({ msg: 'success', payload: finalList });
       }
       return res.status(200).json({ msg: 'success', payload: list });
     } catch (err) {
@@ -202,7 +244,10 @@ export class AdminService {
     }
   }
 
-  async checkSubAdminAccessEligibility(subAdminId: string, accessName: string) {
+  public async checkSubAdminAccessEligibility(
+    subAdminId: string,
+    accessName: string,
+  ): Promise<{ msg: string; payload: boolean }> {
     try {
       const paths = [
         'can_penalize_users',
@@ -215,26 +260,43 @@ export class AdminService {
         'can_monify_admin_content',
         'can_unmonify_admin_content',
       ];
-
       if (!paths.includes(accessName)) {
         return { msg: 'unavailable access name', payload: false };
       }
-
-      //check if userId is in Access Registry on the database
+      const readableFeatureFormat = {
+        can_penalize_users: 'penalize users',
+        can_ban_users: 'ban users',
+        can_create_other_subadmins: 'create other subadmins',
+        can_remove_other_subadmins:
+          'strip other subadmins ot their subadmin status',
+        can_create_admin_content: 'create admin contents',
+        can_edit_admin_content: 'edit or update admin contents',
+        can_delete_admin_content: 'delete admin contents',
+        can_monify_admin_content: 'monify admin contents',
+        can_unmonify_admin_content: 'unmonify admin contents',
+      };
 
       const obj = {};
-      obj[`access.subAdmin.${accessName}`] = { $in: [subAdminId] };
-      const result = await this.accesses.findOne(
-        { _id: process.env.ACCESS_DOC_ID, obj },
-        { $push: obj },
-      );
+      const ObjectId = new mongoose.Types.ObjectId(subAdminId);
 
-      console.log('subadmin access eligibility', result);
+      // obj[`access.subAdmin.${accessName}`] = ObjectId;
+      obj[`access.subAdmin.${accessName}`] = subAdminId;
+      obj[`_id`] = process.env.ACCESS_DOC_ID;
+      const result = await this.accesses.findOne(obj);
 
+      // console.log(
+      //   'object for accesses editing',
+      //   obj,
+      //   result,
+      // );
       if (result) {
         return { msg: 'success', payload: true };
       } else {
-        return { msg: 'access denied', payload: false };
+        let featureType;
+        return {
+          msg: `access denied. Ask admin to give you the permission to ${[readableFeatureFormat[accessName]]}`,
+          payload: false,
+        };
       }
     } catch (err: any) {
       return { msg: err.message, payload: false };

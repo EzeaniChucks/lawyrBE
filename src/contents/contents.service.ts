@@ -270,7 +270,7 @@ export class ContentsService {
   ) {
     try {
       const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
-      if (!decoded?.isAdmin) {
+      if (!decoded?.isAdmin && !decoded?.isSubAdmin) {
         return res.status(400).json({ msg: 'Forbidden request' });
       }
       const singlecontent = await this.content.findOneAndUpdate(
@@ -825,7 +825,7 @@ export class ContentsService {
   }) {
     try {
       const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
-      if (decoded?.isAdmin === true || decoded.isSubAdmin === true) {
+      if (decoded?.isAdmin === true || decoded?.isSubAdmin === true) {
         if (resourceName === 'flashcard') {
           await this.flashcard.findOneAndUpdate(
             { _id: resourceId },
@@ -889,7 +889,7 @@ export class ContentsService {
   }) {
     try {
       const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
-      if (decoded?.isAdmin === true || decoded.isSubAdmin === true) {
+      if (decoded?.isAdmin === true || decoded?.isSubAdmin === true) {
         if (resourceName === 'flashcard') {
           await this.flashcard.findOneAndUpdate(
             { _id: resourceId },
@@ -1092,7 +1092,7 @@ export class ContentsService {
   }) {
     try {
       const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
-      if (decoded?.isAdmin === true || decoded.isSubAdmin === true) {
+      if (decoded?.isAdmin === true || decoded?.isSubAdmin === true) {
         const { isSubscription, isPurchase } = settingsObj;
         if (!isSubscription === undefined || isPurchase === undefined) {
           return res.status(400).json({ msg: 'Incomplete credentials' });
@@ -1167,7 +1167,7 @@ export class ContentsService {
     };
     try {
       const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
-      if (decoded?.isAdmin === true || decoded.isSubAdmin === true) {
+      if (decoded?.isAdmin === true || decoded?.isSubAdmin === true) {
         if (resourceName === 'flashcard') {
           await this.flashcard.findOneAndUpdate(
             { _id: resourceId },

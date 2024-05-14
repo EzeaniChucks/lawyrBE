@@ -30,5 +30,6 @@ import { accessSchema } from './admin.model';
   ],
   controllers: [AdminController],
   providers: [AdminService],
+  exports: [AdminService]
 })
 export class AdminModule {}
