@@ -24,7 +24,9 @@ export class EssaysService {
   ) {
     try {
       const { scenarios, QAs, QAview } = essayBody;
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       const essay = await this.essay.create({
         creatorId: decoded?._id,
         details,
@@ -65,7 +67,9 @@ export class EssaysService {
     res: Response,
   ) {
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       const confirmMCQCreator = await this.essay.findOne({
         _id: essayId,
       });

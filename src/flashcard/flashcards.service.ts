@@ -21,7 +21,7 @@ export class FlashCardsService {
     res: Response,
   ) {
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
       const flashcard = await this.flashcards.create({
         details,
         qaPair,
@@ -60,7 +60,7 @@ export class FlashCardsService {
     res: Response,
   ) {
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
       const getflashcardId = await this.flashcards.findOne({
         _id: flashcardId,
       });

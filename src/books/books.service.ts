@@ -37,13 +37,13 @@ export class Docx_pdfsService {
     res: Response,
   ) {
     try {
-      const cookieObj = await jwtIsValid(req?.signedCookies?.accessToken);
+      const cookieObj = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
       const creatorId = cookieObj._id;
       if (cookieObj?.isAdmin !== true) {
         return res.status(400).json({ msg: 'Forbidden request' });
       }
       const result = await this.cloudinaryservice.uploadPdf(docx_pdffile);
-      console.log('mimetype', docx_pdffile?.mimetype, 'result', result);
+      // console.log('mimetype', docx_pdffile?.mimetype, 'result', result);
       const {
         secure_url,
         public_id,

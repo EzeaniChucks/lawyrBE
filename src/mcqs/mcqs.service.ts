@@ -35,7 +35,9 @@ export class McqsService {
   ) {
     try {
       const { scenarios, QAs } = mcqBody;
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       const flashcard = await this.mcqs.create({
         creatorId: decoded?._id,
         details,
@@ -75,7 +77,9 @@ export class McqsService {
     res: Response,
   ) {
     try {
-      const decoded = await jwtIsValid(req?.signedCookies?.accessToken);
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       const confirmMCQCreator = await this.mcqs.findOne({
         _id: mcqId,
       });

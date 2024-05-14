@@ -39,7 +39,9 @@ export class AudiosService {
     res: Response,
   ) {
     try {
-      const cookieObj = await jwtIsValid(req?.signedCookies?.accessToken);
+      const cookieObj = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       const creatorId = cookieObj._id;
       if (cookieObj?.isAdmin !== true) {
         return res.status(400).json({ msg: 'Forbidden request' });
