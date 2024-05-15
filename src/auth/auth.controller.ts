@@ -23,6 +23,8 @@ import {
   sendResetPassToEmailDTO,
   startMCQGroupTestDTO,
   startMCQTestDTO,
+  VerifyEmailResponseDTO,
+  VerifyEmailDTO,
 } from './auth.dto';
 import { Response, Request } from 'express';
 import { MCQScenarios, MCQuestionsDTO, mcqDetailsDTO } from 'src/mcqs/mcqs.dto';
@@ -78,8 +80,18 @@ export class AuthController {
     return await this.authsevice.register(body, res);
   }
 
+  @Post('verify-email')
+  @ApiOkResponse({
+    description: 'Email verification response',
+    type: VerifyEmailResponseDTO,
+  })
+  @ApiTags('Auth')
+  async verify_email(@Body() body: VerifyEmailDTO, @Res() res: Response) {
+    const { verificationToken, email } = body;
+    return await this.authsevice.verifyEmail(verificationToken, email, res);
+  }
   //send reset pass request to email
-  @Post('auth/send_reset_pass_to_email')
+  @Post('send_reset_pass_to_email')
   @ApiTags('Auth')
   async sendResetPassToEmail(
     @Body() body: sendResetPassToEmailDTO,
@@ -89,7 +101,7 @@ export class AuthController {
   }
 
   //reset password
-  @Post('auth/reset_passwords')
+  @Post('reset_passwords')
   @ApiTags('Auth')
   async sendResetPass(@Body() body: ResetPasswordDTO, @Res() res: Response) {
     const { resetToken, email, password } = body;

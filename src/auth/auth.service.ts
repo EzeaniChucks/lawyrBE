@@ -6,7 +6,12 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { LoginDTO, RegisterDTO } from './auth.dto';
-import { attachCookiesToResponse, createJwt, jwtIsValid } from 'src/utils';
+import {
+  attachCookiesToResponse,
+  createJwt,
+  jwtIsValid,
+  sendEmail,
+} from 'src/utils';
 import { InjectModel } from '@nestjs/mongoose';
 import { Date, Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
@@ -17,7 +22,7 @@ import {
   mcqDetailsDTO,
 } from 'src/mcqs/mcqs.dto';
 import * as emailjs from '@emailjs/nodejs';
-import cryptos from 'crypto';
+import * as cryptos from 'node:crypto';
 import { PaymentService } from 'src/paymentModule/payment.service';
 
 @Injectable()
@@ -25,11 +30,14 @@ export class AuthService {
   constructor(
     @InjectModel('auths') private readonly user: Model<any>,
     private readonly paymentservice: PaymentService,
+    @InjectModel('grouptests') private readonly grouptests: Model<any>,
   ) {}
 
   async isLoggedIn(req: Request, res: Response) {
     try {
-      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       if (decoded) {
         return res.status(200).json(true);
       } else {
@@ -42,7 +50,9 @@ export class AuthService {
 
   async isAdmin(req: Request, res: Response) {
     try {
-      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       if (decoded?.isAdmin === true || decoded?.isSubAdmin === true) {
         return res.status(200).json(true);
       } else {
@@ -55,8 +65,10 @@ export class AuthService {
 
   async getFullUserDetails(req: Request, res: Response) {
     try {
-      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
-      const user = await this.user.findOne({_id:decoded._id});
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
+      const user = await this.user.findOne({ _id: decoded._id });
       const {
         _id,
         email,
@@ -66,17 +78,15 @@ export class AuthService {
         isVerified,
         assets,
       } = user;
-      return res
-        .status(200)
-        .json({
-          _id,
-          email,
-          firstName,
-          lastName,
-          phoneNumber,
-          isVerified,
-          assets,
-        });
+      return res.status(200).json({
+        _id,
+        email,
+        firstName,
+        lastName,
+        phoneNumber,
+        isVerified,
+        assets,
+      });
     } catch (err) {
       return res.status(500).json(err?.message);
     }
@@ -95,13 +105,7 @@ export class AuthService {
       }
       const passIsValid = await bcrypt.compare(password, user?.password);
       if (passIsValid) {
-        const {
-          _id,
-          firstName,
-          lastName,
-          isAdmin,
-          isSubAdmin,
-        } = user;
+        const { _id, firstName, lastName, isAdmin, isSubAdmin } = user;
 
         const token = await createJwt({
           _id,
@@ -136,23 +140,76 @@ export class AuthService {
       if (userExists) {
         return res.status(400).json({ msg: 'User email already exists' });
       }
-      const user = await this.user.create({ ...body, password: hashedPass });
-      const {
-        _id,
-        isAdmin,
-        isSubAdmin,
-      } = user;
 
-      const token = await createJwt({
-        _id,
-        firstName,
-        lastName,
-        isAdmin,
-        isSubAdmin,
+      const verificationToken = cryptos.randomBytes(40).toString('hex');
+      // const verificationToken = 'io8y97t9ug2t94r8t023408yr08y249'
+
+      const user = await this.user.create({
+        ...body,
+        password: hashedPass,
+        verificationToken,
       });
-      return res.status(200).json({ msg: 'Success', payload:token });
+
+      sendEmail(
+        user,
+        `
+          <div>
+            <h4>Email account verification</h4>
+            <h5>Click on the button below to verify your email address</h5>
+            <button><a style='padding:5px; border-radius:20px' href='${process.env.FRONT_END_CONNECTION}/email_verifier?verificationToken=${verificationToken}&email=${user?.email}'>Verify Email</a></button>
+            </div>
+        `,
+      ).then(
+        (response) => {
+          return res.status(200).json({
+            msg: 'success! we sent you an email to verify your account',
+            user: {
+              email,
+            },
+          });
+        },
+        (err) => {
+          return res.status(400).json({ msg: 'unsuccessful', payload: err });
+        },
+      );
+      // return res.status(200).json({ msg: 'Success', payload: token });
     } catch (err) {
       return res.status(500).json({ msg: err?.message });
+    }
+  }
+
+  async verifyEmail(verificationToken: string, email: string, res: Response) {
+    try {
+      const user = await this.user.findOne({ email });
+      if (!user) {
+        return res.status(400).json({
+          msg: 'No user with this email. Please try registering',
+        });
+      }
+      if (user?.verificationToken !== verificationToken) {
+        return res.status(400).json({
+          msg: 'false or expired token. You may already have been verified. Go to login page and try. Or contact customer care for support',
+        });
+      }
+      user.isVerified = true;
+      user.verification_date = Date.now();
+      user.verificationToken = '';
+      await user.save();
+      const { _id, firstName, lastName } = user;
+
+      await this.paymentservice.validateUserWallet(_id);
+
+      return res.status(200).json({
+        msg: 'email verified',
+        user: {
+          _id,
+          email: user.email,
+          firstName,
+          lastName,
+        },
+      });
+    } catch (err) {
+      throw new InternalServerErrorException({ msg: err.message });
     }
   }
 
@@ -240,7 +297,15 @@ export class AuthService {
       user.verificationToken = '';
       await user.save();
 
-      const { _id, firstName, lastName, phoneNumber, isAdmin, isSubAdmin, assets} = user;
+      const {
+        _id,
+        firstName,
+        lastName,
+        phoneNumber,
+        isAdmin,
+        isSubAdmin,
+        assets,
+      } = user;
       await this.paymentservice.validateUserWallet(_id);
       await attachCookiesToResponse(res, {
         _id,
@@ -263,7 +328,6 @@ export class AuthService {
           phoneNumber,
         },
       });
-
     } catch (err) {
       return res.status(500).json({ msg: err?.message });
     }
@@ -366,6 +430,7 @@ export class AuthService {
           mcqDetails: each?.mcqDetails,
           _id: each?._id,
           status: each?.status,
+          clonedresourceId: each?.clonedresourceId,
           totalRightQuestions: each?.totalRightQuestions,
           questionLength: each?.QAs?.length || 0,
           createdAt:
@@ -397,6 +462,7 @@ export class AuthService {
           mcqDetails: each?.mcqDetails,
           _id: each?._id,
           status: each?.status,
+          clonedresourceId: each?.clonedresourceId,
           totalRightQuestions: each?.totalRightQuestions,
           questionLength: each?.QAs?.length || 0,
           createdAt:
@@ -411,6 +477,33 @@ export class AuthService {
         return res
           .status(400)
           .json({ msg: 'Bad request. Something went wrong.' });
+      }
+      const pendingGroupTest = await this.grouptests.findOne({
+        creatorId: userId,
+        $or: [{ groupTestStatus: 'pending' }, { groupTestStatus: 'ongoing' }],
+      });
+
+      if (pendingGroupTest) {
+        return res.status(200).json({
+          msg: 'success',
+          payload: [
+            {
+              mcqDetails: pendingGroupTest?.mcqDetails,
+              _id: pendingGroupTest._id,
+              clonedresourceId: pendingGroupTest?.clonedresourceId,
+              status: pendingGroupTest?.groupTestStatus,
+              totalRightQuestions: pendingGroupTest?.totalRightQuestions,
+              questionLength: pendingGroupTest?.QAs?.length || 0,
+              createdAt:
+                pendingGroupTest?.createdAt ||
+                new Date(Date.now() - fakedate * 24 * 60 * 60 * 1000),
+              updatedAt:
+                pendingGroupTest?.updatedAt ||
+                new Date(Date.now() - fakedate * 24 * 60 * 60 * 800),
+            },
+            ...allMCQs,
+          ],
+        });
       }
       return res.status(200).json({ msg: 'success', payload: allMCQs });
     } catch (err) {
@@ -554,7 +647,7 @@ export class AuthService {
             test?.grouptestId.toString() === mcq?.grouptestId.toString(),
         ); //returns the newly added groupMcq obj, which is last in the array
         return res.status(200).json({
-          msg: 'group test already written',
+          msg: 'group test already created',
           payload: singleTest?._id,
         });
       }
@@ -582,8 +675,8 @@ export class AuthService {
   ) {
     try {
       const userobj = await this.user.findOne({ _id: userId });
-      const currentMCQ = userobj.groupMcqs.find(
-        (each: any) => each._id.toString() === mcqId,
+      const currentMCQ = userobj?.groupMcqs?.find(
+        (each: any) => each?._id?.toString() === mcqId,
       );
       if (!userobj || !currentMCQ) {
         return res
@@ -598,15 +691,40 @@ export class AuthService {
   async fetchAllCompletedGroupMCQs(userId: string, res: Response) {
     try {
       const userobj = await this.user.findOne({ _id: userId });
-      const allMCQs = userobj.groupMcqs.map((each: any) => {
-        return { mcqDetails: each.mcqDetails, _id: each._id };
+      const allMCQs = userobj?.groupMcqs?.map((each: any) => {
+        return {
+          mcqDetails: each?.mcqDetails,
+          _id: each._id,
+          status: each?.status,
+        };
       });
       if (!userobj || !allMCQs) {
         return res
           .status(400)
           .json({ msg: 'Bad request. Something went wrong.' });
       }
-      return res.status(200).json({ msg: 'success', payload: allMCQs });
+      const pendingGroupTest = await this.grouptests.findOne({
+        creatorId: userId,
+        $or: [{ groupTestStatus: 'pending' }, { groupTestStatus: 'ongoing' }],
+      });
+
+      if (pendingGroupTest) {
+        return res.status(200).json({
+          msg: 'success',
+          payload: [
+            {
+              mcqDetails: pendingGroupTest?.mcqDetails,
+              _id: pendingGroupTest._id,
+              status: pendingGroupTest?.status,
+            },
+            ...allMCQs,
+          ],
+        });
+      }
+      return res.status(200).json({
+        msg: 'success',
+        payload: allMCQs,
+      });
     } catch (err) {
       return res.status(500).json({ msg: err.message });
     }

@@ -14,6 +14,40 @@ export class LoginDTO {
   email: string;
   password: string;
 }
+export class VerifyEmailDTO {
+  @ApiProperty({
+    example: 'hexStringGeneratedFromNodejsCryptoModule',
+  })
+  verificationToken: string;
+
+  @ApiProperty({
+    example: 'email@certainsite.com',
+  })
+  email: string;
+}
+export class VerifyEmailResponseDTO {
+  @ApiProperty({
+    example: 'email verified',
+  })
+  msg: string;
+
+  @ApiProperty({
+    example: {
+      _id: 'mongooseGeneratedId',
+      email: 'useremail@certainsite.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      phoneNumber: '+23496900922222',
+    },
+  })
+  user: {
+    _id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+  };
+}
 
 export class UserDetailsResponseDTO {
   @IsString()

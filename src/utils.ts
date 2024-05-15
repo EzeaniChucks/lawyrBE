@@ -5,6 +5,7 @@ import {
 import * as jwt from 'jsonwebtoken';
 import { Response } from 'express';
 import { Model } from 'mongoose';
+import * as emailjs from '@emailjs/nodejs';
 
 export const createJwt = async (body: {
   _id: string;
@@ -82,4 +83,23 @@ export const canDeleteResource = async (
   } catch (err) {
     return { payload: err.message, extra: '' };
   }
+};
+
+export const sendEmail = async (
+  user: { firstName: string; lastName: string; email: string },
+  message: string,
+) => {
+  return await emailjs.send(
+    process.env.EmailServiceId,
+    process.env.EmailTemplateId,
+    {
+      name: `${user?.firstName} ${user?.lastName}`,
+      email: `${user?.email}`,
+      message,
+    },
+    {
+      publicKey: process.env.EmailPubKey,
+      privateKey: process.env.EmailPriKey,
+    },
+  );
 };
