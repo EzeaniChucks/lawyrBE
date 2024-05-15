@@ -23,6 +23,7 @@ import { Response, response } from 'express';
 import { ModuleRef } from '@nestjs/core';
 import { AuthService } from 'src/auth/auth.service';
 import { UnauthorizedException } from '@nestjs/common/exceptions/unauthorized.exception';
+import { TransactionDescriptions } from 'src/utils';
 
 @Injectable()
 export class PaymentService {
@@ -174,7 +175,7 @@ export class PaymentService {
   }
 
   //FL payment response
-  async paymentresponse(transaction_id: string | number, description: string) {
+  async paymentresponse(transaction_id: string | number, description?: string) {
     try {
       const flw = new Flutterwave(
         'FLWPUBK-24b4db4ba5c49a5e48daac3eabcd563b-X',
@@ -204,7 +205,7 @@ export class PaymentService {
         true,
         status,
         amount,
-        description,
+        TransactionDescriptions.flutterwave.credit,
         narration,
       );
 
@@ -216,7 +217,7 @@ export class PaymentService {
         amount,
         customer,
         tx_ref,
-        description,
+        TransactionDescriptions.flutterwave.credit,
         narration,
       );
 
@@ -274,7 +275,7 @@ export class PaymentService {
               true,
               status,
               Number(amount) / 100,
-              'wallet increase',
+              TransactionDescriptions?.paystack?.credit,
               `${userName} funded their wallet`,
             );
 
@@ -290,7 +291,7 @@ export class PaymentService {
                 phone_number: phonenumber,
               },
               reference,
-              'wallet increase',
+              TransactionDescriptions?.paystack?.credit,
               `${userName} funded their wallet`,
             );
             const wallet = await this.increaseWallet(
@@ -321,8 +322,9 @@ export class PaymentService {
       });
     }
   }
+
   //INAPP
-  async chargeWallet(userId: string, amount: number, res: Response) {
+  async chargeWallet(userId: string, amount: number, res: Response, purpose?:string) {
     try {
       //fetch user. Some propeties needed for other database calls below
       const user = await this.User.findOne({ _id: userId });
@@ -346,7 +348,7 @@ export class PaymentService {
         false,
         'success',
         amount,
-        'wallet decrease',
+        purpose || 'debit transaction',
         `Inapp purchase`,
       );
 
@@ -363,7 +365,7 @@ export class PaymentService {
           phone_number: user?.phoneNumber,
         },
         (Math.random() * 10 ** 10).toFixed(0),
-        'wallet decrease',
+        purpose || 'inapp debit transaction',
         `${user?.firstName} ${user?.lastName} funded their wallet`,
       );
 
@@ -384,8 +386,8 @@ export class PaymentService {
   async fundWallet(
     userId: string,
     amount: number,
-    purpose: string,
     res: Response,
+    purpose?: string,
   ) {
     try {
       //fetch user. Some propeties needed for other database calls below
@@ -403,7 +405,7 @@ export class PaymentService {
         true,
         'success',
         amount,
-        purpose,
+        purpose || 'inapp credit transaction',
         `Inapp purchase`,
       );
 
@@ -420,7 +422,7 @@ export class PaymentService {
           phone_number: user?.phoneNumber,
         },
         (Math.random() * 10 ** 10).toFixed(0),
-        purpose,
+        purpose || 'inapp credit transaction',
         `${user?.firstName} ${user?.lastName}, your wallet was refunded`,
       );
 

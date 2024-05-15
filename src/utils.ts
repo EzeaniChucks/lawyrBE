@@ -103,3 +103,18 @@ export const sendEmail = async (
     },
   );
 };
+
+export const TransactionDescriptions = {
+  paystack: {
+    credit: 'Inapp wallet top-up',
+    debit: 'Inapp wallet debit',
+  },
+  flutterwave: {
+    credit: 'Inapp wallet top-up',
+    debit: 'Inapp wallet debit',
+  },
+  inapp: {
+    debit: 'Inapp debit',
+    credit: 'Inapp credit',
+  },
+};

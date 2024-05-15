@@ -11,6 +11,9 @@ export class ChargeUserWalletDTO {
 
   @ApiProperty({ example: 20 })
   amount: number;
+
+  @ApiProperty({ example: 20 })
+  purpose?: string;
 }
 export class FundUserWalletDTO {
   @ApiProperty({ example: 'mongooseGeneratedId' })

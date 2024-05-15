@@ -56,13 +56,13 @@ export class PaymentController {
   //in-app
   @Post('/charge_user_wallet')
   async chargeWallet(@Body() body: ChargeUserWalletDTO, @Res() res: Response) {
-    const { userId, amount } = body;
-    return await this.paymentservice.chargeWallet(userId, amount, res);
+    const { userId, amount, purpose } = body;
+    return await this.paymentservice.chargeWallet(userId, amount, res, purpose);
   }
   @Post('/fund_user_wallet')
   async fundWallet(@Body() body: FundUserWalletDTO, @Res() res: Response) {
     const { userId, amount, purpose } = body;
-    return await this.paymentservice.fundWallet(userId, amount, purpose, res);
+    return await this.paymentservice.fundWallet(userId, amount, res, purpose);
   }
 
   //in-app
