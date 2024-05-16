@@ -37,7 +37,9 @@ export class ContentsService {
   async createcontent(contentfile: Contents, req: Request, res: Response) {
     const { name, resource, type, searchTags } = contentfile;
     try {
-      const cookieObj = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      const cookieObj = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       const creatorId = cookieObj._id;
       if (cookieObj?.isAdmin !== true) {
         return res.status(400).json({ msg: 'Forbidden request' });
@@ -263,13 +265,16 @@ export class ContentsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
+
   async updateSuperFolder(
     newSuperFolder: FullContentsDetails,
     req: Request,
     res: Response,
   ) {
     try {
-      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       if (!decoded?.isAdmin && !decoded?.isSubAdmin) {
         return res.status(400).json({ msg: 'Forbidden request' });
       }
@@ -283,6 +288,30 @@ export class ContentsService {
       return res.status(500).json({ msg: err?.message });
     }
   }
+  async deleteSuperFolder(
+    newSuperFolderId: FullContentsDetails['_id'],
+    req: Request,
+    res: Response,
+  ) {
+    try {
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
+      if (!decoded?.isAdmin && !decoded?.isSubAdmin) {
+        return res.status(400).json({ msg: 'Forbidden request' });
+      }
+      await this.content.findOneAndDelete({ _id: newSuperFolderId });
+      const allOtherContents = await this.content
+        .find({})
+        .select('_id creatorId type name resource searchTags');
+      return res
+        .status(200)
+        .json({ msg: 'successful', payload: allOtherContents });
+    } catch (err) {
+      return res.status(500).json({ msg: err?.message });
+    }
+  }
+
   async updateUserSubORPurchaseOnSuperFolder(
     newSuperFolder: FullContentsDetails,
     res: Response,
@@ -402,7 +431,7 @@ export class ContentsService {
       const namecheck = ['flashcard', 'mcq', 'video', 'audio', 'essay', 'pdf'];
       if (!namecheck.includes(resourceName)) {
         return res.status(400).json({
-          msg: 'unccessful',
+          msg: 'unsuccessful',
           payload:
             'You sent the wrong data for resource name. Enums are flashcard, mcq, video, audio, essay, pdf',
         });
@@ -503,6 +532,64 @@ export class ContentsService {
   ) {
     try {
       if (resourceName === 'folder') {
+        let can_folder_be_deleted = true;
+        const queue: FullContentsDetails[] = [folder];
+
+        while (queue.length) {
+          let len = queue.length;
+          queue.map((eachCont) => {
+            if (
+              eachCont?.subscribedUsersIds.length > 0 ||
+              eachCont?.paidUsersIds?.length > 0
+            ) {
+              can_folder_be_deleted = false;
+            }
+            return eachCont;
+          });
+
+          while (len--) {
+            let node = queue.shift();
+            if (node) {
+              for (let child of node.children) {
+                queue.push(child);
+              }
+            }
+          }
+        }
+        if (!can_folder_be_deleted) {
+          return res.status(200).json({
+            msg: `sucesss`,
+            payload: false,
+          });
+        } else {
+          return res.status(200).json({ mag: 'success', payload: true });
+        }
+      } else {
+        return res
+          .status(400)
+          .json({ msg: 'Bad request. Type of input is not folder' });
+      }
+    } catch (err) {
+      return res.status(500).json({ msg: err.message });
+    }
+  }
+  async canSuperFolderBeDeleted({
+    resourceName,
+    folderId,
+    res,
+  }: {
+    resourceName: string;
+    folderId: string;
+    res: Response;
+  }) {
+    try {
+      if (resourceName === 'folder') {
+        const folder = await this.content.findOne({ _id: folderId });
+        if (!folder) {
+          return res
+            .status(400)
+            .json({ msg: 'Folder with this id does not exist' });
+        }
         let can_folder_be_deleted = true;
         const queue: FullContentsDetails[] = [folder];
 
@@ -824,7 +911,9 @@ export class ContentsService {
     res: Response;
   }) {
     try {
-      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       if (decoded?.isAdmin === true || decoded?.isSubAdmin === true) {
         if (resourceName === 'flashcard') {
           await this.flashcard.findOneAndUpdate(
@@ -888,7 +977,9 @@ export class ContentsService {
     res: Response;
   }) {
     try {
-      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       if (decoded?.isAdmin === true || decoded?.isSubAdmin === true) {
         if (resourceName === 'flashcard') {
           await this.flashcard.findOneAndUpdate(
@@ -1091,7 +1182,9 @@ export class ContentsService {
     res: Response;
   }) {
     try {
-      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       if (decoded?.isAdmin === true || decoded?.isSubAdmin === true) {
         const { isSubscription, isPurchase } = settingsObj;
         if (!isSubscription === undefined || isPurchase === undefined) {
@@ -1166,7 +1259,9 @@ export class ContentsService {
       subscriptionPrice: 0,
     };
     try {
-      const decoded = await jwtIsValid(req?.headers?.authorization?.split(' ')[1]);
+      const decoded = await jwtIsValid(
+        req?.headers?.authorization?.split(' ')[1],
+      );
       if (decoded?.isAdmin === true || decoded?.isSubAdmin === true) {
         if (resourceName === 'flashcard') {
           await this.flashcard.findOneAndUpdate(

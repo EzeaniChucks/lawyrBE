@@ -488,7 +488,7 @@ export class AuthService {
           msg: 'success',
           payload: [
             {
-              mcqDetails: pendingGroupTest?.mcqDetails,
+              mcqDetails: pendingGroupTest?.details,
               _id: pendingGroupTest._id,
               clonedresourceId: pendingGroupTest?.clonedresourceId,
               status: pendingGroupTest?.groupTestStatus,

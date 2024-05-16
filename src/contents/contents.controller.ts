@@ -79,6 +79,15 @@ export class ContentsController {
     return this.contentservice.updateSuperFolder(superFolder, req, res);
   }
 
+  @Delete('delete_super_content/:superFolderId')
+  async deleteSuperFolder(
+    @Param('superFolderId') superFolderId: FullContentsDetails['_id'],
+    @Res() res: Response,
+    @Req() req: Request,
+  ) {
+    return this.contentservice.deleteSuperFolder(superFolderId, req, res);
+  }
+
   @Put('add_item_to_user_assets')
   async addItemToUserAssets(
     @Body()
@@ -158,6 +167,20 @@ export class ContentsController {
   ) {
     const { folder, resourceName } = body;
     return this.contentservice.canFolderBeDeleted(resourceName, folder, res);
+  }
+
+  @Post('can_super_folder_be_deleted')
+  async canSuperFolderBeDeleted(
+    @Body()
+    body: { folderId: FullContentsDetails['_id']; resourceName: string },
+    @Res() res: Response,
+  ) {
+    const { folderId, resourceName } = body;
+    return this.contentservice.canSuperFolderBeDeleted({
+      resourceName,
+      folderId,
+      res,
+    });
   }
 
   @Post('can_user_access_resource')
